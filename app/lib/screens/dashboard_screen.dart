@@ -27,28 +27,112 @@ class _DashboardScreenState extends State<DashboardScreen> {
   DateTime? _customStartDate;
   DateTime? _customEndDate;
   String? _selectedOfficeId; // null = tous les bureaux
-  List<Office> _offices = [];
-  bool _isLoadingOffices = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadOffices();
-  }
-
-  Future<void> _loadOffices() async {
-    try {
-      final offices = await ApiService.fetchOffices();
-      setState(() {
-        _offices = offices;
-        _isLoadingOffices = false;
-      });
-    } catch (e) {
-      setState(() => _isLoadingOffices = false);
-    }
-  }
+  String? _selectedOfficeName; // Nom du bureau sélectionné pour l'affichage
 
   bool get _isBoss => AuthService.currentUser?.role == 'boss';
+
+  Future<void> _showOfficeSelector() async {
+    // Charger les bureaux seulement quand on ouvre le modal
+    List<Office> offices = [];
+    bool isLoading = true;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            // Charger les bureaux au premier build
+            if (isLoading) {
+              ApiService.fetchOffices()
+                  .then((data) {
+                    setDialogState(() {
+                      offices = data;
+                      isLoading = false;
+                    });
+                  })
+                  .catchError((e) {
+                    setDialogState(() => isLoading = false);
+                  });
+            }
+
+            return AlertDialog(
+              title: Row(
+                children: [
+                  const Icon(Icons.business_rounded, color: Color(0xFF9C27B0)),
+                  const SizedBox(width: 12),
+                  const Text('Sélectionner un bureau'),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              content: SizedBox(
+                width: 400,
+                child: isLoading
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(32),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    : SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildOfficeOption(
+                              context,
+                              null,
+                              '🌍 Tous les bureaux',
+                            ),
+                            const Divider(),
+                            ...offices.map(
+                              (office) => _buildOfficeOption(
+                                context,
+                                office,
+                                '${office.flag} ${office.name}',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildOfficeOption(
+    BuildContext context,
+    Office? office,
+    String label,
+  ) {
+    final isSelected = _selectedOfficeId == office?.id;
+    return ListTile(
+      leading: isSelected
+          ? const Icon(Icons.check_circle, color: Color(0xFF9C27B0))
+          : const Icon(Icons.circle_outlined, color: Colors.grey),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          color: isSelected ? const Color(0xFF9C27B0) : null,
+        ),
+      ),
+      onTap: () {
+        setState(() {
+          _selectedOfficeId = office?.id;
+          _selectedOfficeName = office?.name;
+        });
+        Navigator.of(context).pop();
+      },
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      hoverColor: const Color(0xFF9C27B0).withValues(alpha: 0.1),
+    );
+  }
 
   List<Parcel> get _filteredParcels {
     final now = DateTime.now();
