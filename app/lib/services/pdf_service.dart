@@ -171,20 +171,6 @@ class PdfService {
     }
   }
 
-  // Sauvegarder le PDF dans un fichier
-  static Future<String?> _savePdfToFile(Uint8List pdf, Parcel parcel) async {
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final fileName =
-          'GK_Express_${parcel.id.substring(0, 8).toUpperCase()}.pdf';
-      final file = File('${directory.path}/$fileName');
-      await file.writeAsBytes(pdf);
-      return file.path;
-    } catch (e) {
-      return null;
-    }
-  }
-
   // Ouvrir le PDF avec le visualiseur par défaut de Windows
   static Future<void> generateAndOpenPdf(
     Parcel parcel,
