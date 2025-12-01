@@ -422,83 +422,108 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
 
-                // Office Selector (right side) - Only for Boss
+                // Office Selector Button (right side) - Only for Boss
                 if (_isBoss) ...[
                   const SizedBox(width: 16),
-                  Expanded(
-                    flex: 2,
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 20,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.business_rounded,
-                                size: 20,
-                                color: Color(0xFF9C27B0),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 20,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.business_rounded,
+                              size: 20,
+                              color: Color(0xFF9C27B0),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Bureau',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1A1A1A),
                               ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Bureau',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1A1A1A),
-                                ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        InkWell(
+                          onTap: _showOfficeSelector,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _selectedOfficeId != null
+                                  ? const Color(
+                                      0xFF9C27B0,
+                                    ).withValues(alpha: 0.1)
+                                  : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: _selectedOfficeId != null
+                                    ? const Color(0xFF9C27B0)
+                                    : Colors.grey.shade300,
                               ),
-                              const Spacer(),
-                              if (_selectedOfficeId != null)
-                                TextButton(
-                                  onPressed: () {
-                                    setState(() => _selectedOfficeId = null);
-                                  },
-                                  child: const Text(
-                                    'Réinitialiser',
-                                    style: TextStyle(fontSize: 12),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          if (_isLoadingOffices)
-                            const Center(
-                              child: SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            )
-                          else
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                _buildOfficeChip(null, '🌍 Tous'),
-                                ..._offices.map(
-                                  (office) => _buildOfficeChip(
-                                    office.id,
-                                    '${office.flag} ${office.name}',
+                                Text(
+                                  _selectedOfficeName ?? '🌍 Tous les bureaux',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: _selectedOfficeId != null
+                                        ? const Color(0xFF9C27B0)
+                                        : Colors.grey.shade700,
                                   ),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(
+                                  Icons.arrow_drop_down_rounded,
+                                  color: _selectedOfficeId != null
+                                      ? const Color(0xFF9C27B0)
+                                      : Colors.grey.shade600,
                                 ),
                               ],
                             ),
+                          ),
+                        ),
+                        if (_selectedOfficeId != null) ...[
+                          const SizedBox(height: 8),
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _selectedOfficeId = null;
+                                _selectedOfficeName = null;
+                              });
+                            },
+                            icon: const Icon(Icons.clear, size: 16),
+                            label: const Text('Réinitialiser'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.grey.shade600,
+                              padding: EdgeInsets.zero,
+                              textStyle: const TextStyle(fontSize: 12),
+                            ),
+                          ),
                         ],
-                      ),
+                      ],
                     ),
                   ),
                 ],
@@ -754,24 +779,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       checkmarkColor: const Color(0xFF0066CC),
       labelStyle: TextStyle(
         color: isSelected ? const Color(0xFF0066CC) : Colors.grey.shade700,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      ),
-    );
-  }
-
-  Widget _buildOfficeChip(String? officeId, String label) {
-    final isSelected = _selectedOfficeId == officeId;
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() => _selectedOfficeId = officeId);
-      },
-      backgroundColor: Colors.grey.shade100,
-      selectedColor: const Color(0xFF9C27B0).withValues(alpha: 0.15),
-      checkmarkColor: const Color(0xFF9C27B0),
-      labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFF9C27B0) : Colors.grey.shade700,
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
     );
