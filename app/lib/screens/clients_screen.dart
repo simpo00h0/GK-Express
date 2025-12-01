@@ -5,11 +5,15 @@ import '../models/office.dart';
 import '../models/client.dart';
 import '../theme/app_theme.dart';
 
+enum ClientViewType { senders, receivers }
+
 class ClientsScreen extends StatefulWidget {
   final List<Parcel> parcels;
   final List<Office> offices;
   final bool isBoss;
   final String? currentOfficeId;
+  final ClientViewType viewType;
+  final String title;
 
   const ClientsScreen({
     super.key,
@@ -17,6 +21,8 @@ class ClientsScreen extends StatefulWidget {
     required this.offices,
     this.isBoss = false,
     this.currentOfficeId,
+    this.viewType = ClientViewType.senders,
+    this.title = 'Clients',
   });
 
   @override
@@ -27,25 +33,50 @@ class _ClientsScreenState extends State<ClientsScreen> {
   String _searchQuery = '';
   String _sortBy = 'parcels';
 
+  String _getOfficeName(String? officeId) {
+    if (officeId == null) return '';
+    final office = widget.offices.where((o) => o.id == officeId).firstOrNull;
+    return office?.name ?? '';
+  }
+
   List<Client> _buildClientsList() {
     var parcels = widget.parcels;
+
+    // Filtrer par bureau selon le type de vue
     if (!widget.isBoss && widget.currentOfficeId != null) {
-      parcels = parcels
-          .where((p) => p.originOfficeId == widget.currentOfficeId)
-          .toList();
+      if (widget.viewType == ClientViewType.senders) {
+        // Expéditeurs: colis envoyés depuis ce bureau
+        parcels = parcels
+            .where((p) => p.originOfficeId == widget.currentOfficeId)
+            .toList();
+      } else {
+        // Destinataires: colis reçus à ce bureau
+        parcels = parcels
+            .where((p) => p.destinationOfficeId == widget.currentOfficeId)
+            .toList();
+      }
     }
 
-    final Map<String, List<Parcel>> senderParcels = {};
+    final Map<String, List<Parcel>> clientParcels = {};
+
+    // Grouper par expéditeur ou destinataire selon le type
     for (final parcel in parcels) {
-      senderParcels.putIfAbsent(parcel.senderPhone, () => []).add(parcel);
+      final key = widget.viewType == ClientViewType.senders
+          ? parcel.senderPhone
+          : parcel.receiverPhone;
+      clientParcels.putIfAbsent(key, () => []).add(parcel);
     }
 
     final clients = <Client>[];
-    for (final entry in senderParcels.entries) {
+    for (final entry in clientParcels.entries) {
       final phone = entry.key;
       final parcelList = entry.value;
       parcelList.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      final name = parcelList.first.senderName;
+
+      // Nom selon le type de vue
+      final name = widget.viewType == ClientViewType.senders
+          ? parcelList.first.senderName
+          : parcelList.first.receiverName;
 
       int paidAtSending = 0, paidAtReception = 0, unpaid = 0;
       double totalAmount = 0, paidAmount = 0;
@@ -64,19 +95,31 @@ class _ClientsScreenState extends State<ClientsScreen> {
         }
       }
 
-      final Map<String, List<Parcel>> receiverMap = {};
+      // Grouper les contacts associés (destinataires pour expéditeurs, expéditeurs pour destinataires)
+      final Map<String, List<Parcel>> relatedMap = {};
       for (final p in parcelList) {
-        receiverMap.putIfAbsent(p.receiverPhone, () => []).add(p);
+        final relatedPhone = widget.viewType == ClientViewType.senders
+            ? p.receiverPhone
+            : p.senderPhone;
+        relatedMap.putIfAbsent(relatedPhone, () => []).add(p);
       }
 
-      final receivers = receiverMap.entries.map((e) {
+      final receivers = relatedMap.entries.map((e) {
         final rParcels = e.value
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        final lastParcel = rParcels.first;
+        final relatedName = widget.viewType == ClientViewType.senders
+            ? rParcels.first.receiverName
+            : rParcels.first.senderName;
         return ClientReceiver(
-          name: rParcels.first.receiverName,
+          name: relatedName,
           phone: e.key,
           parcelCount: rParcels.length,
           totalAmount: rParcels.fold(0.0, (sum, p) => sum + p.price),
+          originOfficeId: lastParcel.originOfficeId,
+          originOfficeName: _getOfficeName(lastParcel.originOfficeId),
+          destinationOfficeId: lastParcel.destinationOfficeId,
+          destinationOfficeName: _getOfficeName(lastParcel.destinationOfficeId),
         );
       }).toList()..sort((a, b) => b.parcelCount.compareTo(a.parcelCount));
 
@@ -122,19 +165,22 @@ class _ClientsScreenState extends State<ClientsScreen> {
   Widget build(BuildContext context) {
     final clients = _buildClientsList();
     final fmt = NumberFormat('#,###', 'fr_FR');
+    final relatedLabel = widget.viewType == ClientViewType.senders
+        ? 'Destinataires'
+        : 'Expéditeurs';
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(title: const Text('Clients')),
+      appBar: AppBar(title: Text(widget.title)),
       body: Column(
         children: [
-          _buildHeader(clients.length),
-          Expanded(child: _buildList(clients, fmt)),
+          _buildHeader(clients.length, relatedLabel),
+          Expanded(child: _buildList(clients, fmt, relatedLabel)),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(int count) {
+  Widget _buildHeader(int count, String relatedLabel) {
     return Container(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -204,7 +250,11 @@ class _ClientsScreenState extends State<ClientsScreen> {
     );
   }
 
-  Widget _buildList(List<Client> clients, NumberFormat fmt) {
+  Widget _buildList(
+    List<Client> clients,
+    NumberFormat fmt,
+    String relatedLabel,
+  ) {
     if (clients.isEmpty) {
       return Center(
         child: Column(
@@ -223,11 +273,16 @@ class _ClientsScreenState extends State<ClientsScreen> {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       itemCount: clients.length,
-      itemBuilder: (context, index) => _buildClientCard(clients[index], fmt),
+      itemBuilder: (context, index) =>
+          _buildClientCard(clients[index], fmt, relatedLabel),
     );
   }
 
-  Widget _buildClientCard(Client client, NumberFormat fmt) {
+  Widget _buildClientCard(
+    Client client,
+    NumberFormat fmt,
+    String relatedLabel,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -295,11 +350,11 @@ class _ClientsScreenState extends State<ClientsScreen> {
         ),
         children: [
           const Divider(),
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              '📍 Destinataires:',
-              style: TextStyle(fontWeight: FontWeight.w600),
+              '📍 $relatedLabel:',
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
           const SizedBox(height: 8),
@@ -329,38 +384,86 @@ class _ClientsScreenState extends State<ClientsScreen> {
   }
 
   Widget _receiverRow(ClientReceiver r, NumberFormat fmt) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.person_outline, size: 18, color: Colors.grey.shade600),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              r.name,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
+          // Nom et téléphone du destinataire
+          Row(
+            children: [
+              Icon(Icons.person_outline, size: 18, color: Colors.grey.shade600),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  r.name,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              Text(
+                r.phone,
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '${r.parcelCount} colis',
+                  style: const TextStyle(fontSize: 11, color: Colors.blue),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${fmt.format(r.totalAmount)} CFA',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ],
           ),
-          Text(
-            r.phone,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.blue.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              '${r.parcelCount} colis',
-              style: const TextStyle(fontSize: 11, color: Colors.blue),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '${fmt.format(r.totalAmount)} CFA',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          const SizedBox(height: 6),
+          // Envoyé par / Envoyé au
+          Row(
+            children: [
+              if (r.originOfficeName != null &&
+                  r.originOfficeName!.isNotEmpty) ...[
+                Icon(
+                  Icons.flight_takeoff,
+                  size: 14,
+                  color: Colors.green.shade600,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Envoyé par ${r.originOfficeName}',
+                  style: TextStyle(fontSize: 12, color: Colors.green.shade700),
+                ),
+                const SizedBox(width: 16),
+              ],
+              if (r.destinationOfficeName != null &&
+                  r.destinationOfficeName!.isNotEmpty) ...[
+                Icon(
+                  Icons.flight_land,
+                  size: 14,
+                  color: Colors.orange.shade600,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Envoyé au ${r.destinationOfficeName}',
+                  style: TextStyle(fontSize: 12, color: Colors.orange.shade700),
+                ),
+              ],
+            ],
           ),
         ],
       ),

@@ -55,24 +55,25 @@ class _ModernSidebarState extends State<ModernSidebar> {
       selectedIcon: Icons.contacts_rounded,
       label: 'Clients',
       index: 6,
+      hasChildren: true,
     ),
     _NavItem(
       icon: Icons.analytics_outlined,
       selectedIcon: Icons.analytics_rounded,
       label: 'Analyses',
-      index: 7,
+      index: 8,
     ),
     _NavItem(
       icon: Icons.photo_library_outlined,
       selectedIcon: Icons.photo_library_rounded,
       label: 'Médias',
-      index: 8,
+      index: 9,
     ),
     _NavItem(
       icon: Icons.settings_outlined,
       selectedIcon: Icons.settings_rounded,
       label: 'Paramètres',
-      index: 9,
+      index: 10,
     ),
   ];
 
@@ -97,15 +98,59 @@ class _ModernSidebarState extends State<ModernSidebar> {
     ),
   ];
 
+  final List<_NavItem> _clientsSubItems = [
+    _NavItem(
+      icon: Icons.person_add_alt_outlined,
+      selectedIcon: Icons.person_add_alt_rounded,
+      label: 'Expéditeurs',
+      index: 6,
+    ),
+    _NavItem(
+      icon: Icons.person_pin_circle_outlined,
+      selectedIcon: Icons.person_pin_circle_rounded,
+      label: 'Destinataires',
+      index: 7,
+    ),
+  ];
+
+  bool _clientsExpanded = false;
+
   bool _isColisChildSelected() {
     return _colisSubItems.any((item) => item.index == widget.selectedIndex);
   }
 
+  bool _isClientsChildSelected() {
+    return _clientsSubItems.any((item) => item.index == widget.selectedIndex);
+  }
+
+  bool _isItemExpanded(_NavItem item) {
+    if (item.label == 'Colis') return _colisExpanded;
+    if (item.label == 'Clients') return _clientsExpanded;
+    return false;
+  }
+
+  bool _isChildSelected(_NavItem item) {
+    if (item.label == 'Colis') return _isColisChildSelected();
+    if (item.label == 'Clients') return _isClientsChildSelected();
+    return false;
+  }
+
+  void _toggleExpanded(_NavItem item) {
+    setState(() {
+      if (item.label == 'Colis') {
+        _colisExpanded = !_colisExpanded;
+      } else if (item.label == 'Clients') {
+        _clientsExpanded = !_clientsExpanded;
+      }
+    });
+  }
+
   Widget _buildNavItem(_NavItem item, int listIndex) {
     final isSelected = item.hasChildren
-        ? _isColisChildSelected()
+        ? _isChildSelected(item)
         : widget.selectedIndex == item.index;
     final isHovered = _hoveredIndex == listIndex;
+    final isExpanded = _isItemExpanded(item);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -134,7 +179,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
             child: InkWell(
               onTap: () {
                 if (item.hasChildren) {
-                  setState(() => _colisExpanded = !_colisExpanded);
+                  _toggleExpanded(item);
                 } else {
                   widget.onDestinationSelected(item.index);
                 }
@@ -176,7 +221,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
                     if (item.hasChildren)
                       AnimatedRotation(
                         duration: AppTheme.animationDuration,
-                        turns: _colisExpanded ? 0.5 : 0,
+                        turns: isExpanded ? 0.5 : 0,
                         child: Icon(
                           Icons.expand_more,
                           color: AppTheme.textSecondary,
@@ -378,9 +423,14 @@ class _ModernSidebarState extends State<ModernSidebar> {
                     const SizedBox.shrink()
                   else
                     _buildNavItem(_navItems[i], i),
-                  // Sous-menu Colis (index 1)
-                  if (i == 1 && _colisExpanded)
+                  // Sous-menu Colis (label: Colis)
+                  if (_navItems[i].label == 'Colis' && _colisExpanded)
                     ..._colisSubItems.map(
+                      (subItem) => _buildSubNavItem(subItem),
+                    ),
+                  // Sous-menu Clients (label: Clients)
+                  if (_navItems[i].label == 'Clients' && _clientsExpanded)
+                    ..._clientsSubItems.map(
                       (subItem) => _buildSubNavItem(subItem),
                     ),
                 ],

@@ -24,7 +24,9 @@ class Client {
   });
 
   double get unpaidAmount => totalAmount - paidAmount;
-  double get paymentRate => totalParcels > 0 ? (paidAtSending + paidAtReception) / totalParcels * 100 : 0;
+  double get paymentRate => totalParcels > 0
+      ? (paidAtSending + paidAtReception) / totalParcels * 100
+      : 0;
 }
 
 class ClientReceiver {
@@ -32,12 +34,19 @@ class ClientReceiver {
   final String phone;
   final int parcelCount;
   final double totalAmount;
+  final String? originOfficeId;
+  final String? originOfficeName;
+  final String? destinationOfficeId;
+  final String? destinationOfficeName;
 
   ClientReceiver({
     required this.name,
     required this.phone,
     required this.parcelCount,
     required this.totalAmount,
+    this.originOfficeId,
+    this.originOfficeName,
+    this.destinationOfficeId,
+    this.destinationOfficeName,
   });
 }
-

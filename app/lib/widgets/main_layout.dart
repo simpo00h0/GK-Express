@@ -297,12 +297,14 @@ class _MainLayoutState extends State<MainLayout> {
     // Index 1: Colis Envoyés
     // Index 2: Colis Reçus
     // Index 3: Tous les colis
+    // Index 0: Dashboard
+    // Index 1-3: Colis (Envoyés, Reçus, Tous)
     // Index 4: Messages
     // Index 5: Utilisateurs
-    // Index 6: Clients
-    // Index 7: Analyses
-    // Index 8: Médias
-    // Index 9: Paramètres
+    // Index 6-7: Clients (Expéditeurs, Destinataires)
+    // Index 8: Analyses
+    // Index 9: Médias
+    // Index 10: Paramètres
     final List<Widget> screens = [
       DashboardScreen(
         parcels: _isBoss ? bossAllParcels : _parcels,
@@ -369,22 +371,34 @@ class _MainLayoutState extends State<MainLayout> {
                 style: TextStyle(fontSize: 18, color: Colors.grey),
               ),
             ),
-      // Écran des clients (automatiquement alimenté par les colis)
+      // Écran des clients expéditeurs (index 6)
       ClientsScreen(
         parcels: _isBoss ? bossAllParcels : _parcels,
         offices: _cachedOffices ?? [],
         isBoss: _isBoss,
         currentOfficeId: AuthService.currentUser?.officeId,
+        viewType: ClientViewType.senders,
+        title: 'Clients Expéditeurs',
       ),
-      // Écran des analyses (Agent et Boss)
+      // Écran des clients destinataires (index 7)
+      ClientsScreen(
+        parcels: _isBoss ? bossAllParcels : _parcels,
+        offices: _cachedOffices ?? [],
+        isBoss: _isBoss,
+        currentOfficeId: AuthService.currentUser?.officeId,
+        viewType: ClientViewType.receivers,
+        title: 'Clients Destinataires',
+      ),
+      // Écran des analyses (index 8)
       AnalyticsScreen(
         parcels: _parcels,
         offices: _cachedOffices ?? [],
         isLoading: _isLoading,
         onRefresh: _loadParcels,
       ),
-      // Écran des médias (Disponible bientôt)
+      // Écran des médias (index 9)
       const MediasScreen(),
+      // Écran des paramètres (index 10)
       const SettingsScreen(),
     ];
 
