@@ -9,12 +9,12 @@ class StatusUtils {
         return 'En Transit';
       case 'arrived':
         return 'Arrivé';
-      case 'livré':
+      case 'delivered':
         return 'Livré';
-      case 'problème':
+      case 'issue':
         return 'Problème';
       default:
-        return 'Créé';
+        return status;
     }
   }
 
@@ -26,9 +26,9 @@ class StatusUtils {
         return const Color(0xFFFF9800);
       case 'arrived':
         return const Color(0xFF2196F3);
-      case 'livré':
+      case 'delivered':
         return const Color(0xFF4CAF50);
-      case 'problème':
+      case 'issue':
         return const Color(0xFFF44336);
       default:
         return const Color(0xFF9E9E9E);
@@ -43,9 +43,9 @@ class StatusUtils {
         return Icons.local_shipping_rounded;
       case 'arrived':
         return Icons.flight_land_rounded;
-      case 'livré':
+      case 'delivered':
         return Icons.check_circle_rounded;
-      case 'problème':
+      case 'issue':
         return Icons.warning_rounded;
       default:
         return Icons.help_outline_rounded;
@@ -60,9 +60,9 @@ class StatusUtils {
         return 'Le colis est en cours de transport';
       case 'arrived':
         return 'Le colis est arrivé à destination';
-      case 'livré':
+      case 'delivered':
         return 'Le colis a été livré';
-      case 'problème':
+      case 'issue':
         return 'Un problème est survenu';
       default:
         return '';
@@ -70,6 +70,6 @@ class StatusUtils {
   }
 
   static List<String> getAllStatuses() {
-    return ['created', 'intransit', 'arrived', 'livré', 'problème'];
+    return ['created', 'intransit', 'arrived', 'delivered', 'issue'];
   }
 }
