@@ -270,113 +270,73 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
-            // Filters Row: Period (left) and Office Selector (right)
+            // Period Selector - Compact inline
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Period Selector Button (left side)
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 20,
-                        offset: const Offset(0, 4),
+                InkWell(
+                  onTap: _showPeriodSelector,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _selectedPeriod != 'all'
+                          ? const Color(0xFF0066CC).withValues(alpha: 0.1)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _selectedPeriod != 'all'
+                            ? const Color(0xFF0066CC)
+                            : Colors.grey.shade300,
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.calendar_today_rounded,
-                            size: 20,
-                            color: Color(0xFF0066CC),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Période',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF1A1A1A),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      InkWell(
-                        onTap: _showPeriodSelector,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _periodLabel,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                             color: _selectedPeriod != 'all'
-                                ? const Color(0xFF0066CC).withValues(alpha: 0.1)
-                                : Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: _selectedPeriod != 'all'
-                                  ? const Color(0xFF0066CC)
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                _periodLabel,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: _selectedPeriod != 'all'
-                                      ? const Color(0xFF0066CC)
-                                      : Colors.grey.shade700,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Icon(
-                                Icons.arrow_drop_down_rounded,
-                                color: _selectedPeriod != 'all'
-                                    ? const Color(0xFF0066CC)
-                                    : Colors.grey.shade600,
-                              ),
-                            ],
+                                ? const Color(0xFF0066CC)
+                                : Colors.grey.shade700,
                           ),
                         ),
-                      ),
-                      if (_selectedPeriod != 'all') ...[
-                        const SizedBox(height: 8),
-                        TextButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              _selectedPeriod = 'all';
-                              _customStartDate = null;
-                              _customEndDate = null;
-                            });
-                          },
-                          icon: const Icon(Icons.clear, size: 16),
-                          label: const Text('Réinitialiser'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.grey.shade600,
-                            padding: EdgeInsets.zero,
-                            textStyle: const TextStyle(fontSize: 12),
-                          ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_drop_down_rounded,
+                          size: 20,
+                          color: _selectedPeriod != 'all'
+                              ? const Color(0xFF0066CC)
+                              : Colors.grey.shade600,
                         ),
                       ],
-                    ],
+                    ),
                   ),
                 ),
+                if (_selectedPeriod != 'all') ...[
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedPeriod = 'all';
+                        _customStartDate = null;
+                        _customEndDate = null;
+                      });
+                    },
+                    icon: const Icon(Icons.close, size: 18),
+                    tooltip: 'Réinitialiser',
+                    style: IconButton.styleFrom(
+                      foregroundColor: Colors.grey.shade600,
+                      padding: const EdgeInsets.all(8),
+                    ),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 24),
