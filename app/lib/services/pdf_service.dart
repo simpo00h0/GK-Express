@@ -282,33 +282,72 @@ class PdfService {
     return pw.Container(
       padding: const pw.EdgeInsets.all(20),
       decoration: pw.BoxDecoration(
-        color: PdfColor.fromHex('#9C27B0'),
+        color: PdfColors.white,
         borderRadius: pw.BorderRadius.circular(12),
+        border: pw.Border.all(color: PdfColors.grey300, width: 1),
       ),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
+          // Logo GK Express
+          pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
-              pw.Text(
-                'GK EXPRESS',
-                style: pw.TextStyle(
-                  fontSize: 28,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.white,
-                ),
-              ),
-              pw.Text(
-                'Transport International de Colis',
-                style: const pw.TextStyle(fontSize: 12, color: PdfColors.white),
+              // Speedometer logo
+              _buildGKLogo(),
+              pw.SizedBox(width: 8),
+              // Text EXpress DELIVERY
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                mainAxisSize: pw.MainAxisSize.min,
+                children: [
+                  pw.Row(
+                    children: [
+                      pw.Text(
+                        'EX',
+                        style: pw.TextStyle(
+                          fontSize: 24,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColor.fromHex('#E53935'),
+                        ),
+                      ),
+                      pw.Text(
+                        'press',
+                        style: pw.TextStyle(
+                          fontSize: 24,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColor.fromHex('#1A1A1A'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  pw.Text(
+                    'DELIVERY',
+                    style: pw.TextStyle(
+                      fontSize: 8,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColor.fromHex('#E53935'),
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  pw.SizedBox(height: 2),
+                  pw.Text(
+                    'Simple, rapide et efficace!',
+                    style: pw.TextStyle(
+                      fontSize: 8,
+                      fontStyle: pw.FontStyle.italic,
+                      color: PdfColor.fromHex('#1A1A1A'),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
+          // ID du colis
           pw.Container(
             padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: pw.BoxDecoration(
-              color: PdfColors.white,
+              color: PdfColor.fromHex('#E53935'),
               borderRadius: pw.BorderRadius.circular(8),
             ),
             child: pw.Text(
@@ -316,9 +355,49 @@ class PdfService {
               style: pw.TextStyle(
                 fontSize: 18,
                 fontWeight: pw.FontWeight.bold,
-                color: PdfColor.fromHex('#9C27B0'),
+                color: PdfColors.white,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Draw the GK logo for PDF (speedometer with G and K)
+  static pw.Widget _buildGKLogo() {
+    return pw.Container(
+      width: 55,
+      height: 55,
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColor.fromHex('#1A1A1A'), width: 4),
+        shape: pw.BoxShape.circle,
+      ),
+      child: pw.Stack(
+        alignment: pw.Alignment.center,
+        children: [
+          // G and K letters
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.center,
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.Text(
+                'G',
+                style: pw.TextStyle(
+                  fontSize: 20,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColor.fromHex('#E53935'),
+                ),
+              ),
+              pw.Text(
+                'K',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColor.fromHex('#1A1A1A'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -361,7 +440,7 @@ Expediteur: ${parcel.senderName} (${parcel.senderPhone})
 Destinataire: ${parcel.receiverName} (${parcel.receiverPhone})
 Destination: ${parcel.destination}
 Statut: $statusText
-Prix: ${parcel.price.toStringAsFixed(2)} EUR ($paymentStatus)
+Prix: ${parcel.price.toStringAsFixed(0)} CFA ($paymentStatus)
 Date: $date
 Suivi: gkexpress.com/track/$shortId''';
   }
@@ -405,7 +484,7 @@ Suivi: gkexpress.com/track/$shortId''';
           pw.SizedBox(height: 12),
           _buildInfoRow(
             'Prix',
-            '${parcel.price.toStringAsFixed(2)} EUR',
+            '${parcel.price.toStringAsFixed(0)} CFA',
             PdfColor.fromHex('#10B981'),
           ),
           pw.SizedBox(height: 12),

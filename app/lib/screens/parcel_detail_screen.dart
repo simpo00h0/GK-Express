@@ -32,7 +32,7 @@ class ParcelDetailScreen extends StatelessWidget {
 
 📍 Destination: ${parcel.destination}
 📊 Statut: $statusText
-💰 Prix: ${parcel.price.toStringAsFixed(2)} EUR ($paymentStatus)
+💰 Prix: ${parcel.price.toStringAsFixed(0)} CFA ($paymentStatus)
 📅 Cree le: $date
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔗 Suivi en ligne:
