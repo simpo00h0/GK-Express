@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
 import '../models/parcel.dart';
+import '../services/pdf_service.dart';
 import 'update_status_screen.dart';
 
 class ParcelDetailScreen extends StatelessWidget {
@@ -133,6 +134,42 @@ class ParcelDetailScreen extends StatelessWidget {
                       color: Colors.grey.shade600,
                       letterSpacing: 1.2,
                     ),
+                  ),
+                  const SizedBox(height: 24),
+                  // PDF Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () =>
+                            PdfService.generateAndPrintParcelPdf(parcel),
+                        icon: const Icon(Icons.print_rounded, size: 18),
+                        label: const Text('Imprimer'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF9C27B0),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      OutlinedButton.icon(
+                        onPressed: () =>
+                            PdfService.generateAndShareParcelPdf(parcel),
+                        icon: const Icon(Icons.share_rounded, size: 18),
+                        label: const Text('Partager PDF'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF9C27B0),
+                          side: const BorderSide(color: Color(0xFF9C27B0)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
