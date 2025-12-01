@@ -6,7 +6,7 @@ import '../models/user.dart';
 import '../models/office.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://localhost:3000/api';
+  static const String baseUrl = 'https://gk-express.onrender.com/api';
   static String? _token;
   static User? _currentUser;
 

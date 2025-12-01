@@ -18,7 +18,7 @@ class SocketService {
       return;
     }
 
-    _socket = io.io('http://localhost:3000', <String, dynamic>{
+    _socket = io.io('https://gk-express.onrender.com', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });

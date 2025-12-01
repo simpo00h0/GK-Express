@@ -7,7 +7,7 @@ import '../models/user.dart';
 import 'auth_service.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:3000/api';
+  static const String baseUrl = 'https://gk-express.onrender.com/api';
 
   // Fetch all offices
   static Future<List<Office>> fetchOffices() async {
