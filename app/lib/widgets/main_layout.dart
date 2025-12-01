@@ -11,6 +11,7 @@ import '../services/socket_service.dart';
 import '../services/notification_service.dart';
 import '../widgets/in_app_notification.dart';
 import '../widgets/modern_sidebar.dart';
+import '../widgets/enhanced_parcel_card.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -33,7 +34,19 @@ class _MainLayoutState extends State<MainLayout> {
   void initState() {
     super.initState();
     _loadParcels();
+    _loadOffices();
     _initializeSocket();
+  }
+
+  Future<void> _loadOffices() async {
+    if (_cachedOffices == null) {
+      final offices = await ApiService.fetchOffices();
+      if (mounted) {
+        setState(() {
+          _cachedOffices = offices;
+        });
+      }
+    }
   }
 
   void _initializeSocket() {
@@ -271,6 +284,8 @@ class _MainLayoutState extends State<MainLayout> {
             : 'Colis Envoyés',
         emptyMessage: 'Aucun colis envoyé',
         showCreateButton: !_isBoss,
+        offices: _cachedOffices,
+        viewType: ParcelViewType.sent,
       ),
       HomeScreen(
         parcels: _isBoss ? bossReceivedParcels : _getReceivedParcels(),
@@ -284,6 +299,8 @@ class _MainLayoutState extends State<MainLayout> {
             : 'Colis Reçus',
         emptyMessage: 'Aucun colis reçu',
         showCreateButton: false,
+        offices: _cachedOffices,
+        viewType: ParcelViewType.received,
       ),
       HomeScreen(
         parcels: _isBoss ? bossAllParcels : _parcels,
@@ -297,6 +314,8 @@ class _MainLayoutState extends State<MainLayout> {
             : 'Tous les Colis',
         emptyMessage: 'Aucun colis',
         showCreateButton: !_isBoss,
+        offices: _cachedOffices,
+        viewType: ParcelViewType.all,
       ),
       const Center(
         child: Text(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/parcel.dart';
+import '../models/office.dart';
 import '../widgets/enhanced_parcel_card.dart';
 import 'create_parcel_screen.dart';
 import 'parcel_detail_screen.dart';
@@ -12,6 +13,8 @@ class HomeScreen extends StatefulWidget {
   final String title;
   final String emptyMessage;
   final bool showCreateButton;
+  final List<Office>? offices;
+  final ParcelViewType viewType;
 
   const HomeScreen({
     super.key,
@@ -22,6 +25,8 @@ class HomeScreen extends StatefulWidget {
     this.title = 'Gestion des Colis',
     this.emptyMessage = 'Aucun colis pour le moment',
     this.showCreateButton = true,
+    this.offices,
+    this.viewType = ParcelViewType.all,
   });
 
   @override
@@ -300,6 +305,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         final parcel = _filteredParcels[index];
                         return EnhancedParcelCard(
                           parcel: parcel,
+                          offices: widget.offices,
+                          viewType: widget.viewType,
                           onTap: () {
                             Navigator.push(
                               context,

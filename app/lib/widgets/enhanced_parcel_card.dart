@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/parcel.dart';
-import '../services/auth_service.dart';
+import '../models/office.dart';
 import '../theme/app_theme.dart';
 import '../utils/status_utils.dart';
+
+enum ParcelViewType { sent, received, all }
 
 class EnhancedParcelCard extends StatefulWidget {
   final Parcel parcel;
   final VoidCallback onTap;
+  final List<Office>? offices;
+  final ParcelViewType viewType;
 
   const EnhancedParcelCard({
     super.key,
     required this.parcel,
     required this.onTap,
+    this.offices,
+    this.viewType = ParcelViewType.all,
   });
 
   @override
@@ -22,32 +28,40 @@ class EnhancedParcelCard extends StatefulWidget {
 class _EnhancedParcelCardState extends State<EnhancedParcelCard> {
   bool _isHovered = false;
 
-  String get _directionLabel {
-    final userOfficeId = AuthService.currentUser?.officeId;
-    if (widget.parcel.originOfficeId == userOfficeId) {
-      return 'Envoyé';
-    } else if (widget.parcel.destinationOfficeId == userOfficeId) {
-      return 'Reçu';
+  String _getOfficeName(String? officeId) {
+    if (officeId == null || widget.offices == null) return '';
+    final office = widget.offices!.where((o) => o.id == officeId).firstOrNull;
+    return office?.name ?? '';
+  }
+
+  // Affiche "Envoyé par [bureau]" ou "Envoyé au [bureau]"
+  String get _officeLabel {
+    if (widget.viewType == ParcelViewType.received) {
+      // Onglet Colis Reçus - afficher le bureau d'origine
+      final originName = _getOfficeName(widget.parcel.originOfficeId);
+      return originName.isNotEmpty ? 'Envoyé par $originName' : '';
+    } else if (widget.viewType == ParcelViewType.sent) {
+      // Onglet Colis Envoyés - afficher le bureau de destination
+      final destName = _getOfficeName(widget.parcel.destinationOfficeId);
+      return destName.isNotEmpty ? 'Envoyé au $destName' : '';
     }
     return '';
   }
 
-  Color get _directionColor {
-    final userOfficeId = AuthService.currentUser?.officeId;
-    if (widget.parcel.originOfficeId == userOfficeId) {
-      return AppTheme.info;
-    } else if (widget.parcel.destinationOfficeId == userOfficeId) {
+  Color get _officeLabelColor {
+    if (widget.viewType == ParcelViewType.received) {
       return AppTheme.success;
+    } else if (widget.viewType == ParcelViewType.sent) {
+      return AppTheme.info;
     }
     return AppTheme.textSecondary;
   }
 
-  IconData get _directionIcon {
-    final userOfficeId = AuthService.currentUser?.officeId;
-    if (widget.parcel.originOfficeId == userOfficeId) {
-      return Icons.arrow_upward_rounded;
-    } else if (widget.parcel.destinationOfficeId == userOfficeId) {
+  IconData get _officeLabelIcon {
+    if (widget.viewType == ParcelViewType.received) {
       return Icons.arrow_downward_rounded;
+    } else if (widget.viewType == ParcelViewType.sent) {
+      return Icons.arrow_upward_rounded;
     }
     return Icons.swap_horiz_rounded;
   }
@@ -129,30 +143,30 @@ class _EnhancedParcelCardState extends State<EnhancedParcelCard> {
                           ),
                         ),
                         const Spacer(),
-                        // Direction Badge
-                        if (_directionLabel.isNotEmpty)
+                        // Office Badge (pour Boss et Agents)
+                        if (_officeLabel.isNotEmpty)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: _directionColor.withValues(alpha: 0.1),
+                              color: _officeLabelColor.withValues(alpha: 0.1),
                               borderRadius: AppTheme.borderRadiusSmall,
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  _directionIcon,
+                                  _officeLabelIcon,
                                   size: 14,
-                                  color: _directionColor,
+                                  color: _officeLabelColor,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  _directionLabel,
+                                  _officeLabel,
                                   style: TextStyle(
-                                    color: _directionColor,
+                                    color: _officeLabelColor,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                   ),
