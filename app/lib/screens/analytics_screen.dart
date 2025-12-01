@@ -132,12 +132,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
           ),
           const Spacer(),
           _buildPeriodSelector(),
-          const SizedBox(width: 16),
-          IconButton(
-            onPressed: widget.onRefresh,
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Actualiser',
-          ),
         ],
       ),
     );
