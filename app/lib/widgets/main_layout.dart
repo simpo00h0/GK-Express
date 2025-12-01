@@ -6,6 +6,7 @@ import '../screens/settings_screen.dart';
 import '../screens/users_screen.dart';
 import '../screens/analytics_screen.dart';
 import '../screens/medias_screen.dart';
+import '../screens/messages_screen.dart';
 import '../models/parcel.dart';
 import '../models/office.dart';
 import '../models/user.dart';
@@ -348,12 +349,7 @@ class _MainLayoutState extends State<MainLayout> {
         offices: _cachedOffices,
         viewType: ParcelViewType.all,
       ),
-      const Center(
-        child: Text(
-          'Messages (Bientôt)',
-          style: TextStyle(fontSize: 18, color: Colors.grey),
-        ),
-      ),
+      const MessagesScreen(),
       // Écran des utilisateurs (Boss uniquement)
       _isBoss
           ? UsersScreen(
