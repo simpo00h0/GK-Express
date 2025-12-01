@@ -14,6 +14,45 @@ class ParcelDetailScreen extends StatelessWidget {
     required this.onStatusUpdated,
   });
 
+  // Générer les données du QR code avec informations lisibles
+  String _generateQrData() {
+    final shortId = parcel.id.substring(0, 8).toUpperCase();
+    final statusText = _getStatusText(parcel.status);
+    final paymentStatus = parcel.isPaid ? 'Payé ✅' : 'Non payé ❌';
+    final date = DateFormat('dd/MM/yyyy HH:mm').format(parcel.createdAt);
+
+    return '''📦 GK EXPRESS - Colis #$shortId
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📤 Expéditeur: ${parcel.senderName}
+   Tel: ${parcel.senderPhone}
+
+📥 Destinataire: ${parcel.receiverName}
+   Tel: ${parcel.receiverPhone}
+
+📍 Destination: ${parcel.destination}
+📊 Statut: $statusText
+💰 Prix: ${parcel.price.toStringAsFixed(2)} EUR ($paymentStatus)
+📅 Cree le: $date
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔗 Suivi en ligne:
+   gkexpress.com/track/$shortId''';
+  }
+
+  String _getStatusText(ParcelStatus status) {
+    switch (status) {
+      case ParcelStatus.created:
+        return '🆕 Créé';
+      case ParcelStatus.inTransit:
+        return '🚚 En Transit';
+      case ParcelStatus.arrived:
+        return '📍 Arrivé';
+      case ParcelStatus.delivered:
+        return '✅ Livré';
+      case ParcelStatus.issue:
+        return '⚠️ Problème';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -78,10 +117,11 @@ class ParcelDetailScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: QrImageView(
-                      data: parcel.id,
+                      data: _generateQrData(),
                       version: QrVersions.auto,
-                      size: 200,
+                      size: 220,
                       backgroundColor: Colors.white,
+                      errorCorrectionLevel: QrErrorCorrectLevel.M,
                     ),
                   ),
                   const SizedBox(height: 20),
