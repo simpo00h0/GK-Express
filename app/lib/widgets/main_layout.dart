@@ -5,6 +5,7 @@ import '../screens/login_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/users_screen.dart';
 import '../screens/analytics_screen.dart';
+import '../screens/medias_screen.dart';
 import '../models/parcel.dart';
 import '../models/office.dart';
 import '../models/user.dart';
@@ -375,6 +376,8 @@ class _MainLayoutState extends State<MainLayout> {
         isLoading: _isLoading,
         onRefresh: _loadParcels,
       ),
+      // Écran des médias (Disponible bientôt)
+      const MediasScreen(),
       const SettingsScreen(),
     ];
 

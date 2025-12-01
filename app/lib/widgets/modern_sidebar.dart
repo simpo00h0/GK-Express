@@ -57,10 +57,16 @@ class _ModernSidebarState extends State<ModernSidebar> {
       index: 6,
     ),
     _NavItem(
+      icon: Icons.photo_library_outlined,
+      selectedIcon: Icons.photo_library_rounded,
+      label: 'Médias',
+      index: 7,
+    ),
+    _NavItem(
       icon: Icons.settings_outlined,
       selectedIcon: Icons.settings_rounded,
       label: 'Paramètres',
-      index: 7,
+      index: 8,
     ),
   ];
 
