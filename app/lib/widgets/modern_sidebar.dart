@@ -6,12 +6,14 @@ class ModernSidebar extends StatefulWidget {
   final int selectedIndex;
   final Function(int) onDestinationSelected;
   final Function() onLogout;
+  final bool isBoss;
 
   const ModernSidebar({
     super.key,
     required this.selectedIndex,
     required this.onDestinationSelected,
     required this.onLogout,
+    this.isBoss = false,
   });
 
   @override
@@ -353,7 +355,11 @@ class _ModernSidebarState extends State<ModernSidebar> {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               children: [
                 for (int i = 0; i < _navItems.length; i++) ...[
-                  _buildNavItem(_navItems[i], i),
+                  // Hide "Utilisateurs" (index 5) for non-boss users
+                  if (_navItems[i].index == 5 && !widget.isBoss)
+                    const SizedBox.shrink()
+                  else
+                    _buildNavItem(_navItems[i], i),
                   // Sous-menu Colis (index 1)
                   if (i == 1 && _colisExpanded)
                     ..._colisSubItems.map(

@@ -375,6 +375,7 @@ class _MainLayoutState extends State<MainLayout> {
         children: [
           ModernSidebar(
             selectedIndex: _selectedIndex,
+            isBoss: _isBoss,
             onDestinationSelected: (index) {
               setState(() => _selectedIndex = index);
             },
