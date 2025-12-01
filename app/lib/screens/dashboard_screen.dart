@@ -34,6 +34,146 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   bool get _isBoss => AuthService.currentUser?.role == 'boss';
 
+  String get _periodLabel {
+    switch (_selectedPeriod) {
+      case 'today':
+        return '📅 Aujourd\'hui';
+      case 'week':
+        return '📅 Cette Semaine';
+      case 'month':
+        return '📅 Ce Mois';
+      case 'custom':
+        if (_customStartDate != null && _customEndDate != null) {
+          return '📅 ${DateFormat('dd/MM').format(_customStartDate!)} - ${DateFormat('dd/MM').format(_customEndDate!)}';
+        }
+        return '📅 Personnalisé';
+      default:
+        return '📅 Toutes les périodes';
+    }
+  }
+
+  Future<void> _showPeriodSelector() async {
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(
+                Icons.calendar_today_rounded,
+                color: Color(0xFF0066CC),
+              ),
+              const SizedBox(width: 12),
+              const Text('Sélectionner une période'),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 400,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildPeriodOption(
+                    context,
+                    'all',
+                    '🔄 Toutes les périodes',
+                    Icons.all_inclusive_rounded,
+                  ),
+                  _buildPeriodOption(
+                    context,
+                    'today',
+                    '📅 Aujourd\'hui',
+                    Icons.today_rounded,
+                  ),
+                  _buildPeriodOption(
+                    context,
+                    'week',
+                    '📆 Cette Semaine',
+                    Icons.date_range_rounded,
+                  ),
+                  _buildPeriodOption(
+                    context,
+                    'month',
+                    '🗓️ Ce Mois',
+                    Icons.calendar_month_rounded,
+                  ),
+                  const Divider(),
+                  _buildPeriodOption(
+                    context,
+                    'custom',
+                    '⚙️ Personnalisé',
+                    Icons.tune_rounded,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    // Si "Personnalisé" est sélectionné, afficher les date pickers
+    if (_selectedPeriod == 'custom') {
+      await _showCustomDatePickers();
+    }
+  }
+
+  Widget _buildPeriodOption(
+    BuildContext context,
+    String value,
+    String label,
+    IconData icon,
+  ) {
+    final isSelected = _selectedPeriod == value;
+    return ListTile(
+      leading: isSelected
+          ? const Icon(Icons.check_circle, color: Color(0xFF0066CC))
+          : Icon(icon, color: Colors.grey),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          color: isSelected ? const Color(0xFF0066CC) : null,
+        ),
+      ),
+      onTap: () {
+        setState(() => _selectedPeriod = value);
+        Navigator.of(context).pop();
+      },
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      hoverColor: const Color(0xFF0066CC).withValues(alpha: 0.1),
+    );
+  }
+
+  Future<void> _showCustomDatePickers() async {
+    final startDate = await showDatePicker(
+      context: context,
+      initialDate: _customStartDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      helpText: 'Date de début',
+    );
+    if (startDate != null && mounted) {
+      setState(() => _customStartDate = startDate);
+
+      final endDate = await showDatePicker(
+        context: context,
+        initialDate: _customEndDate ?? DateTime.now(),
+        firstDate: startDate,
+        lastDate: DateTime.now(),
+        helpText: 'Date de fin',
+      );
+      if (endDate != null && mounted) {
+        setState(() => _customEndDate = endDate);
+      }
+    }
+  }
+
   Future<void> _showOfficeSelector() async {
     // Utiliser le cache si disponible
     List<Office> offices = _cachedOffices ?? [];
@@ -269,160 +409,105 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Date Filter (left side)
-                Expanded(
-                  flex: _isBoss ? 3 : 1,
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 20,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.calendar_today_rounded,
-                              size: 20,
-                              color: Color(0xFF0066CC),
+                // Period Selector Button (left side)
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 20,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.calendar_today_rounded,
+                            size: 20,
+                            color: Color(0xFF0066CC),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Période',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1A1A1A),
                             ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Période',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1A1A1A),
-                              ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      InkWell(
+                        onTap: _showPeriodSelector,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _selectedPeriod != 'all'
+                                ? const Color(0xFF0066CC).withValues(alpha: 0.1)
+                                : Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _selectedPeriod != 'all'
+                                  ? const Color(0xFF0066CC)
+                                  : Colors.grey.shade300,
                             ),
-                            const Spacer(),
-                            if (_selectedPeriod == 'custom' &&
-                                _customStartDate != null &&
-                                _customEndDate != null)
-                              Text(
-                                '${DateFormat('dd/MM/yy').format(_customStartDate!)} - ${DateFormat('dd/MM/yy').format(_customEndDate!)}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey.shade600,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _buildPeriodChip(
-                              'Tout',
-                              'all',
-                              Icons.all_inclusive_rounded,
-                            ),
-                            _buildPeriodChip(
-                              'Aujourd\'hui',
-                              'today',
-                              Icons.today_rounded,
-                            ),
-                            _buildPeriodChip(
-                              'Cette Semaine',
-                              'week',
-                              Icons.date_range_rounded,
-                            ),
-                            _buildPeriodChip(
-                              'Ce Mois',
-                              'month',
-                              Icons.calendar_month_rounded,
-                            ),
-                            _buildPeriodChip(
-                              'Personnalisé',
-                              'custom',
-                              Icons.tune_rounded,
-                            ),
-                          ],
-                        ),
-                        if (_selectedPeriod == 'custom') ...[
-                          const SizedBox(height: 16),
-                          Row(
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: () async {
-                                    final date = await showDatePicker(
-                                      context: context,
-                                      initialDate:
-                                          _customStartDate ?? DateTime.now(),
-                                      firstDate: DateTime(2020),
-                                      lastDate: DateTime.now(),
-                                    );
-                                    if (date != null) {
-                                      setState(() => _customStartDate = date);
-                                    }
-                                  },
-                                  icon: const Icon(
-                                    Icons.calendar_today_rounded,
-                                    size: 18,
-                                  ),
-                                  label: Text(
-                                    _customStartDate != null
-                                        ? DateFormat(
-                                            'dd/MM/yyyy',
-                                          ).format(_customStartDate!)
-                                        : 'Date Début',
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
+                              Text(
+                                _periodLabel,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: _selectedPeriod != 'all'
+                                      ? const Color(0xFF0066CC)
+                                      : Colors.grey.shade700,
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              const Icon(
-                                Icons.arrow_forward_rounded,
-                                size: 16,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: () async {
-                                    final date = await showDatePicker(
-                                      context: context,
-                                      initialDate:
-                                          _customEndDate ?? DateTime.now(),
-                                      firstDate:
-                                          _customStartDate ?? DateTime(2020),
-                                      lastDate: DateTime.now(),
-                                    );
-                                    if (date != null) {
-                                      setState(() => _customEndDate = date);
-                                    }
-                                  },
-                                  icon: const Icon(
-                                    Icons.event_rounded,
-                                    size: 18,
-                                  ),
-                                  label: Text(
-                                    _customEndDate != null
-                                        ? DateFormat(
-                                            'dd/MM/yyyy',
-                                          ).format(_customEndDate!)
-                                        : 'Date Fin',
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.arrow_drop_down_rounded,
+                                color: _selectedPeriod != 'all'
+                                    ? const Color(0xFF0066CC)
+                                    : Colors.grey.shade600,
                               ),
                             ],
                           ),
-                        ],
+                        ),
+                      ),
+                      if (_selectedPeriod != 'all') ...[
+                        const SizedBox(height: 8),
+                        TextButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _selectedPeriod = 'all';
+                              _customStartDate = null;
+                              _customEndDate = null;
+                            });
+                          },
+                          icon: const Icon(Icons.clear, size: 16),
+                          label: const Text('Réinitialiser'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.grey.shade600,
+                            padding: EdgeInsets.zero,
+                            textStyle: const TextStyle(fontSize: 12),
+                          ),
+                        ),
                       ],
-                    ),
+                    ],
                   ),
                 ),
 
@@ -763,27 +848,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildPeriodChip(String label, String value, IconData icon) {
-    final isSelected = _selectedPeriod == value;
-    return FilterChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [Icon(icon, size: 16), const SizedBox(width: 6), Text(label)],
-      ),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() => _selectedPeriod = value);
-      },
-      backgroundColor: Colors.grey.shade100,
-      selectedColor: const Color(0xFF0066CC).withValues(alpha: 0.15),
-      checkmarkColor: const Color(0xFF0066CC),
-      labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFF0066CC) : Colors.grey.shade700,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
     );
   }
