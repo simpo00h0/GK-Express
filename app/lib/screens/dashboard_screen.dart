@@ -222,17 +222,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        title: const Text('Vue d\'ensemble'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: () {},
-            tooltip: 'Actualiser',
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Vue d\'ensemble')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(

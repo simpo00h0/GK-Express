@@ -487,12 +487,6 @@ class _MainLayoutState extends State<MainLayout> {
                             ),
                           ),
                         ],
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.refresh_rounded),
-                          onPressed: _loadParcels,
-                          tooltip: 'Actualiser',
-                        ),
                       ],
                     ),
                   ),
