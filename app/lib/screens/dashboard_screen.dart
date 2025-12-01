@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/parcel.dart';
+import '../models/office.dart';
+import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/status_chart.dart';
@@ -23,13 +26,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _selectedPeriod = 'all';
   DateTime? _customStartDate;
   DateTime? _customEndDate;
+  String? _selectedOfficeId; // null = tous les bureaux
+  List<Office> _offices = [];
+  bool _isLoadingOffices = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOffices();
+  }
+
+  Future<void> _loadOffices() async {
+    try {
+      final offices = await ApiService.fetchOffices();
+      setState(() {
+        _offices = offices;
+        _isLoadingOffices = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingOffices = false);
+    }
+  }
+
+  bool get _isBoss => AuthService.currentUser?.role == 'boss';
 
   List<Parcel> get _filteredParcels {
     final now = DateTime.now();
 
+    // D'abord filtrer par bureau si un bureau est sélectionné
+    var parcels = widget.parcels;
+    if (_selectedOfficeId != null && _isBoss) {
+      parcels = parcels
+          .where(
+            (p) =>
+                p.originOfficeId == _selectedOfficeId ||
+                p.destinationOfficeId == _selectedOfficeId,
+          )
+          .toList();
+    }
+
+    // Ensuite filtrer par période
     switch (_selectedPeriod) {
       case 'today':
-        return widget.parcels.where((p) {
+        return parcels.where((p) {
           final date = p.createdAt;
           return date.year == now.year &&
               date.month == now.month &&
@@ -39,7 +78,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 'week':
         final weekStart = now.subtract(Duration(days: now.weekday - 1));
         final weekEnd = weekStart.add(const Duration(days: 6));
-        return widget.parcels.where((p) {
+        return parcels.where((p) {
           return p.createdAt.isAfter(
                 weekStart.subtract(const Duration(days: 1)),
               ) &&
@@ -47,15 +86,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }).toList();
 
       case 'month':
-        return widget.parcels.where((p) {
+        return parcels.where((p) {
           return p.createdAt.year == now.year && p.createdAt.month == now.month;
         }).toList();
 
       case 'custom':
         if (_customStartDate == null || _customEndDate == null) {
-          return widget.parcels;
+          return parcels;
         }
-        return widget.parcels.where((p) {
+        return parcels.where((p) {
           return p.createdAt.isAfter(
                 _customStartDate!.subtract(const Duration(days: 1)),
               ) &&
@@ -65,7 +104,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }).toList();
 
       default:
-        return widget.parcels;
+        return parcels;
     }
   }
 
@@ -138,152 +177,248 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Date Filter
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.calendar_today_rounded,
-                        size: 20,
-                        color: Color(0xFF0066CC),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Période',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1A1A1A),
-                        ),
-                      ),
-                      const Spacer(),
-                      if (_selectedPeriod == 'custom' &&
-                          _customStartDate != null &&
-                          _customEndDate != null)
-                        Text(
-                          '${DateFormat('dd/MM/yy').format(_customStartDate!)} - ${DateFormat('dd/MM/yy').format(_customEndDate!)}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade600,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildPeriodChip(
-                        'Tout',
-                        'all',
-                        Icons.all_inclusive_rounded,
-                      ),
-                      _buildPeriodChip(
-                        'Aujourd\'hui',
-                        'today',
-                        Icons.today_rounded,
-                      ),
-                      _buildPeriodChip(
-                        'Cette Semaine',
-                        'week',
-                        Icons.date_range_rounded,
-                      ),
-                      _buildPeriodChip(
-                        'Ce Mois',
-                        'month',
-                        Icons.calendar_month_rounded,
-                      ),
-                      _buildPeriodChip(
-                        'Personnalisé',
-                        'custom',
-                        Icons.tune_rounded,
-                      ),
-                    ],
-                  ),
-                  if (_selectedPeriod == 'custom') ...[
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () async {
-                              final date = await showDatePicker(
-                                context: context,
-                                initialDate: _customStartDate ?? DateTime.now(),
-                                firstDate: DateTime(2020),
-                                lastDate: DateTime.now(),
-                              );
-                              if (date != null) {
-                                setState(() => _customStartDate = date);
-                              }
-                            },
-                            icon: const Icon(
-                              Icons.calendar_today_rounded,
-                              size: 18,
-                            ),
-                            label: Text(
-                              _customStartDate != null
-                                  ? DateFormat(
-                                      'dd/MM/yyyy',
-                                    ).format(_customStartDate!)
-                                  : 'Date Début',
-                              style: const TextStyle(fontSize: 13),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 16,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () async {
-                              final date = await showDatePicker(
-                                context: context,
-                                initialDate: _customEndDate ?? DateTime.now(),
-                                firstDate: _customStartDate ?? DateTime(2020),
-                                lastDate: DateTime.now(),
-                              );
-                              if (date != null) {
-                                setState(() => _customEndDate = date);
-                              }
-                            },
-                            icon: const Icon(Icons.event_rounded, size: 18),
-                            label: Text(
-                              _customEndDate != null
-                                  ? DateFormat(
-                                      'dd/MM/yyyy',
-                                    ).format(_customEndDate!)
-                                  : 'Date Fin',
-                              style: const TextStyle(fontSize: 13),
-                            ),
-                          ),
+            // Filters Row: Period (left) and Office Selector (right)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Date Filter (left side)
+                Expanded(
+                  flex: _isBoss ? 3 : 1,
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 20,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
-                  ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_today_rounded,
+                              size: 20,
+                              color: Color(0xFF0066CC),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Période',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1A1A1A),
+                              ),
+                            ),
+                            const Spacer(),
+                            if (_selectedPeriod == 'custom' &&
+                                _customStartDate != null &&
+                                _customEndDate != null)
+                              Text(
+                                '${DateFormat('dd/MM/yy').format(_customStartDate!)} - ${DateFormat('dd/MM/yy').format(_customEndDate!)}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _buildPeriodChip(
+                              'Tout',
+                              'all',
+                              Icons.all_inclusive_rounded,
+                            ),
+                            _buildPeriodChip(
+                              'Aujourd\'hui',
+                              'today',
+                              Icons.today_rounded,
+                            ),
+                            _buildPeriodChip(
+                              'Cette Semaine',
+                              'week',
+                              Icons.date_range_rounded,
+                            ),
+                            _buildPeriodChip(
+                              'Ce Mois',
+                              'month',
+                              Icons.calendar_month_rounded,
+                            ),
+                            _buildPeriodChip(
+                              'Personnalisé',
+                              'custom',
+                              Icons.tune_rounded,
+                            ),
+                          ],
+                        ),
+                        if (_selectedPeriod == 'custom') ...[
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    final date = await showDatePicker(
+                                      context: context,
+                                      initialDate:
+                                          _customStartDate ?? DateTime.now(),
+                                      firstDate: DateTime(2020),
+                                      lastDate: DateTime.now(),
+                                    );
+                                    if (date != null) {
+                                      setState(() => _customStartDate = date);
+                                    }
+                                  },
+                                  icon: const Icon(
+                                    Icons.calendar_today_rounded,
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    _customStartDate != null
+                                        ? DateFormat(
+                                            'dd/MM/yyyy',
+                                          ).format(_customStartDate!)
+                                        : 'Date Début',
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Icon(
+                                Icons.arrow_forward_rounded,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    final date = await showDatePicker(
+                                      context: context,
+                                      initialDate:
+                                          _customEndDate ?? DateTime.now(),
+                                      firstDate:
+                                          _customStartDate ?? DateTime(2020),
+                                      lastDate: DateTime.now(),
+                                    );
+                                    if (date != null) {
+                                      setState(() => _customEndDate = date);
+                                    }
+                                  },
+                                  icon: const Icon(
+                                    Icons.event_rounded,
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    _customEndDate != null
+                                        ? DateFormat(
+                                            'dd/MM/yyyy',
+                                          ).format(_customEndDate!)
+                                        : 'Date Fin',
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Office Selector (right side) - Only for Boss
+                if (_isBoss) ...[
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 2,
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 20,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.business_rounded,
+                                size: 20,
+                                color: Color(0xFF9C27B0),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Bureau',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1A1A1A),
+                                ),
+                              ),
+                              const Spacer(),
+                              if (_selectedOfficeId != null)
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() => _selectedOfficeId = null);
+                                  },
+                                  child: const Text(
+                                    'Réinitialiser',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          if (_isLoadingOffices)
+                            const Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            )
+                          else
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _buildOfficeChip(null, '🌍 Tous'),
+                                ..._offices.map(
+                                  (office) => _buildOfficeChip(
+                                    office.id,
+                                    '${office.flag} ${office.name}',
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
-              ),
+              ],
             ),
             const SizedBox(height: 24),
 
@@ -535,6 +670,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
       checkmarkColor: const Color(0xFF0066CC),
       labelStyle: TextStyle(
         color: isSelected ? const Color(0xFF0066CC) : Colors.grey.shade700,
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+      ),
+    );
+  }
+
+  Widget _buildOfficeChip(String? officeId, String label) {
+    final isSelected = _selectedOfficeId == officeId;
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() => _selectedOfficeId = officeId);
+      },
+      backgroundColor: Colors.grey.shade100,
+      selectedColor: const Color(0xFF9C27B0).withValues(alpha: 0.15),
+      checkmarkColor: const Color(0xFF9C27B0),
+      labelStyle: TextStyle(
+        color: isSelected ? const Color(0xFF9C27B0) : Colors.grey.shade700,
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
     );

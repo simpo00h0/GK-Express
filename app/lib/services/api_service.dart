@@ -2,10 +2,31 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/parcel.dart';
+import '../models/office.dart';
 import 'auth_service.dart';
 
 class ApiService {
   static const String baseUrl = 'http://localhost:3000/api';
+
+  // Fetch all offices
+  static Future<List<Office>> fetchOffices() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/offices'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => Office.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load offices');
+      }
+    } catch (e) {
+      debugPrint('Error fetching offices: $e');
+      return [];
+    }
+  }
 
   // Fetch all parcels (with optional office filter)
   static Future<List<Parcel>> fetchParcels({String? officeId}) async {
