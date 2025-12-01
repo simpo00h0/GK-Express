@@ -443,7 +443,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               .length
                               .toString(),
                           icon: Icons.warning_rounded,
-                          gradient: AppTheme.warningGradient,
+                          gradient: AppTheme.errorGradient,
                           subtitle: 'Attention',
                         ),
                       ),

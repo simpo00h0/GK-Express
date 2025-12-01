@@ -60,6 +60,12 @@ class AppTheme {
     end: Alignment.bottomRight,
   );
 
+  static const LinearGradient errorGradient = LinearGradient(
+    colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
   // Gradient Glassmorphism
   static LinearGradient glassGradient = LinearGradient(
     colors: [
