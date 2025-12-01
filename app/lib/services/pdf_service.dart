@@ -1,15 +1,144 @@
+import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:barcode/barcode.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/parcel.dart';
 
 class PdfService {
-  static Future<void> generateAndPrintParcelPdf(Parcel parcel) async {
+  // Ouvrir le dialogue d'impression système
+  static Future<void> generateAndPrintParcelPdf(
+    Parcel parcel,
+    BuildContext context,
+  ) async {
     final pdf = await _generateParcelPdf(parcel);
-    await Printing.layoutPdf(onLayout: (format) async => pdf);
+
+    // Obtenir la liste des imprimantes disponibles
+    final printers = await Printing.listPrinters();
+
+    if (printers.isEmpty) {
+      // Aucune imprimante trouvée - sauvegarder le PDF à la place
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Aucune imprimante trouvée. Le PDF sera sauvegardé.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      await _savePdfToFile(pdf, parcel);
+      return;
+    }
+
+    // Afficher le dialogue de sélection d'imprimante
+    if (context.mounted) {
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.print, color: Color(0xFF9C27B0)),
+              SizedBox(width: 12),
+              Text('Choisir une imprimante'),
+            ],
+          ),
+          content: SizedBox(
+            width: 300,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: printers.length,
+              itemBuilder: (context, index) {
+                final printer = printers[index];
+                return ListTile(
+                  leading: Icon(
+                    printer.isDefault ? Icons.print : Icons.print_outlined,
+                    color: printer.isDefault
+                        ? const Color(0xFF9C27B0)
+                        : Colors.grey,
+                  ),
+                  title: Text(printer.name),
+                  subtitle: printer.isDefault ? const Text('Par défaut') : null,
+                  onTap: () async {
+                    Navigator.of(ctx).pop();
+                    await _printToPrinter(pdf, printer, context);
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () async {
+                Navigator.of(ctx).pop();
+                // Utiliser l'aperçu d'impression système
+                await Printing.layoutPdf(onLayout: (format) async => pdf);
+              },
+              icon: const Icon(Icons.preview),
+              label: const Text('Aperçu'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF9C27B0),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  // Imprimer directement vers une imprimante
+  static Future<void> _printToPrinter(
+    Uint8List pdf,
+    Printer printer,
+    BuildContext context,
+  ) async {
+    try {
+      final result = await Printing.directPrintPdf(
+        printer: printer,
+        onLayout: (format) async => pdf,
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result
+                  ? 'Impression envoyée à ${printer.name}'
+                  : 'Échec de l\'impression',
+            ),
+            backgroundColor: result ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  // Sauvegarder le PDF dans un fichier
+  static Future<String?> _savePdfToFile(Uint8List pdf, Parcel parcel) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final fileName =
+          'GK_Express_${parcel.id.substring(0, 8).toUpperCase()}.pdf';
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsBytes(pdf);
+      return file.path;
+    } catch (e) {
+      return null;
+    }
   }
 
   static Future<void> generateAndShareParcelPdf(Parcel parcel) async {

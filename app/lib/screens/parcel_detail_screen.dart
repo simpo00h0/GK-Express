@@ -24,7 +24,7 @@ class ParcelDetailScreen extends StatelessWidget {
 
     return '''📦 GK EXPRESS - Colis #$shortId
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📤 Expéditeur: ${parcel.senderName}
+📤 Expediteur: ${parcel.senderName}
    Tel: ${parcel.senderPhone}
 
 📥 Destinataire: ${parcel.receiverName}
@@ -36,7 +36,10 @@ class ParcelDetailScreen extends StatelessWidget {
 📅 Cree le: $date
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔗 Suivi en ligne:
-   gkexpress.com/track/$shortId''';
+   gkexpress.com/track/$shortId
+
+📄 Telecharger PDF:
+   gkexpress.com/pdf/$shortId''';
   }
 
   String _getStatusText(ParcelStatus status) {
@@ -141,8 +144,10 @@ class ParcelDetailScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ElevatedButton.icon(
-                        onPressed: () =>
-                            PdfService.generateAndPrintParcelPdf(parcel),
+                        onPressed: () => PdfService.generateAndPrintParcelPdf(
+                          parcel,
+                          context,
+                        ),
                         icon: const Icon(Icons.print_rounded, size: 18),
                         label: const Text('Imprimer'),
                         style: ElevatedButton.styleFrom(
