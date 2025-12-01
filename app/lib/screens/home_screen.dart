@@ -475,10 +475,12 @@ class _HomeScreenState extends State<HomeScreen> {
           Text(
             _searchQuery.isNotEmpty
                 ? 'Essayez une autre recherche'
-                : 'Créez votre premier colis pour commencer',
+                : widget.showCreateButton
+                ? 'Créez votre premier colis pour commencer'
+                : '',
             style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
           ),
-          if (_searchQuery.isEmpty) ...[
+          if (_searchQuery.isEmpty && widget.showCreateButton) ...[
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () {
