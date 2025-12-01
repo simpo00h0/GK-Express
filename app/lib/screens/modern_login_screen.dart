@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../widgets/main_layout.dart';
@@ -95,7 +96,7 @@ class _ModernLoginScreenState extends State<ModernLoginScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Animated Logo
+                  // Animated GK Logo
                   TweenAnimationBuilder(
                     duration: const Duration(milliseconds: 800),
                     tween: Tween<double>(begin: 0, end: 1),
@@ -103,37 +104,66 @@ class _ModernLoginScreenState extends State<ModernLoginScreen>
                     builder: (context, double value, child) {
                       return Transform.scale(scale: value, child: child);
                     },
-                    child: Container(
-                      padding: const EdgeInsets.all(28),
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.primaryGradient,
-                        borderRadius: AppTheme.borderRadiusLarge,
-                        boxShadow: AppTheme.strongGlowShadow(AppTheme.primary),
-                      ),
-                      child: const Icon(
-                        Icons.local_shipping_rounded,
-                        size: 72,
-                        color: Colors.white,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Speedometer circle with G and K
+                        SizedBox(
+                          width: 80,
+                          height: 80,
+                          child: CustomPaint(painter: _GKLogoPainter()),
+                        ),
+                        const SizedBox(width: 12),
+                        // EXpress text with DELIVERY below
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  'EX',
+                                  style: TextStyle(
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.w900,
+                                    color: const Color(0xFFE53935),
+                                    letterSpacing: -1,
+                                  ),
+                                ),
+                                Text(
+                                  'press',
+                                  style: TextStyle(
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.w900,
+                                    color: const Color(0xFF1A1A1A),
+                                    letterSpacing: -1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              'DELIVERY',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFFE53935),
+                                letterSpacing: 4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 12),
 
-                  // Title
-                  const Text(
-                    'GK Express',
-                    style: TextStyle(
-                      fontSize: 42,
-                      fontWeight: FontWeight.w900,
-                      color: AppTheme.textPrimary,
-                      letterSpacing: -1,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
+                  // Slogan
                   Text(
-                    'Gestion de Transit International',
+                    'Simple, rapide et efficace!',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
+                      fontStyle: FontStyle.italic,
                       color: AppTheme.textSecondary,
                       fontWeight: FontWeight.w500,
                     ),
@@ -342,4 +372,96 @@ class _ModernLoginScreenState extends State<ModernLoginScreen>
       ),
     );
   }
+}
+
+// Custom painter for GK Logo
+class _GKLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 4;
+
+    // Draw speedometer arc (black)
+    final arcPaint = Paint()
+      ..color = const Color(0xFF1A1A1A)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round;
+
+    const startAngle = 2.4;
+    const sweepAngle = 4.0;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      startAngle,
+      sweepAngle,
+      false,
+      arcPaint,
+    );
+
+    // Draw tick marks
+    final tickPaint = Paint()
+      ..color = const Color(0xFF1A1A1A)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+
+    for (int i = 0; i <= 6; i++) {
+      final angle = startAngle + (sweepAngle * i / 6);
+      final outerPoint = Offset(
+        center.dx + radius * 0.95 * math.cos(angle),
+        center.dy + radius * 0.95 * math.sin(angle),
+      );
+      final innerPoint = Offset(
+        center.dx + radius * 0.75 * math.cos(angle),
+        center.dy + radius * 0.75 * math.sin(angle),
+      );
+      canvas.drawLine(innerPoint, outerPoint, tickPaint);
+    }
+
+    // Draw "G" in red
+    final gPainter = TextPainter(
+      text: const TextSpan(
+        text: 'G',
+        style: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.w900,
+          color: Color(0xFFE53935),
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    gPainter.layout();
+    gPainter.paint(canvas, Offset(center.dx - 18, center.dy - 14));
+
+    // Draw "K" in black
+    final kPainter = TextPainter(
+      text: const TextSpan(
+        text: 'K',
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.w900,
+          color: Color(0xFF1A1A1A),
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    kPainter.layout();
+    kPainter.paint(canvas, Offset(center.dx + 2, center.dy - 10));
+
+    // Draw red accent line (needle)
+    final needlePaint = Paint()
+      ..color = const Color(0xFFE53935)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawLine(
+      Offset(center.dx - 8, center.dy + 12),
+      Offset(center.dx + 12, center.dy - 8),
+      needlePaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
