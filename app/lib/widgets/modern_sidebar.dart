@@ -51,22 +51,28 @@ class _ModernSidebarState extends State<ModernSidebar> {
       index: 5,
     ),
     _NavItem(
+      icon: Icons.contacts_outlined,
+      selectedIcon: Icons.contacts_rounded,
+      label: 'Clients',
+      index: 6,
+    ),
+    _NavItem(
       icon: Icons.analytics_outlined,
       selectedIcon: Icons.analytics_rounded,
       label: 'Analyses',
-      index: 6,
+      index: 7,
     ),
     _NavItem(
       icon: Icons.photo_library_outlined,
       selectedIcon: Icons.photo_library_rounded,
       label: 'Médias',
-      index: 7,
+      index: 8,
     ),
     _NavItem(
       icon: Icons.settings_outlined,
       selectedIcon: Icons.settings_rounded,
       label: 'Paramètres',
-      index: 8,
+      index: 9,
     ),
   ];
 

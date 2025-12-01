@@ -7,6 +7,7 @@ import '../screens/users_screen.dart';
 import '../screens/analytics_screen.dart';
 import '../screens/medias_screen.dart';
 import '../screens/messages_screen.dart';
+import '../screens/clients_screen.dart';
 import '../models/parcel.dart';
 import '../models/office.dart';
 import '../models/user.dart';
@@ -298,7 +299,10 @@ class _MainLayoutState extends State<MainLayout> {
     // Index 3: Tous les colis
     // Index 4: Messages
     // Index 5: Utilisateurs
-    // Index 6: Paramètres
+    // Index 6: Clients
+    // Index 7: Analyses
+    // Index 8: Médias
+    // Index 9: Paramètres
     final List<Widget> screens = [
       DashboardScreen(
         parcels: _isBoss ? bossAllParcels : _parcels,
@@ -365,6 +369,13 @@ class _MainLayoutState extends State<MainLayout> {
                 style: TextStyle(fontSize: 18, color: Colors.grey),
               ),
             ),
+      // Écran des clients (automatiquement alimenté par les colis)
+      ClientsScreen(
+        parcels: _isBoss ? bossAllParcels : _parcels,
+        offices: _cachedOffices ?? [],
+        isBoss: _isBoss,
+        currentOfficeId: AuthService.currentUser?.officeId,
+      ),
       // Écran des analyses (Agent et Boss)
       AnalyticsScreen(
         parcels: _parcels,
