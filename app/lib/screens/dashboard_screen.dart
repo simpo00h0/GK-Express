@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/parcel.dart';
-import '../models/office.dart';
-import '../services/api_service.dart';
-import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/status_chart.dart';
@@ -26,13 +23,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _selectedPeriod = 'all';
   DateTime? _customStartDate;
   DateTime? _customEndDate;
-  String? _selectedOfficeId; // null = tous les bureaux
-  String? _selectedOfficeName; // Nom du bureau sélectionné pour l'affichage
-
-  // Cache des bureaux (static pour persister entre les rebuilds)
-  static List<Office>? _cachedOffices;
-
-  bool get _isBoss => AuthService.currentUser?.role == 'boss';
 
   String get _periodLabel {
     switch (_selectedPeriod) {
@@ -174,126 +164,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Future<void> _showOfficeSelector() async {
-    // Utiliser le cache si disponible
-    List<Office> offices = _cachedOffices ?? [];
-    bool isLoading = _cachedOffices == null;
-
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            // Charger les bureaux seulement si pas en cache
-            if (isLoading && _cachedOffices == null) {
-              ApiService.fetchOffices()
-                  .then((data) {
-                    _cachedOffices = data; // Mettre en cache
-                    setDialogState(() {
-                      offices = data;
-                      isLoading = false;
-                    });
-                  })
-                  .catchError((e) {
-                    setDialogState(() => isLoading = false);
-                  });
-            }
-
-            return AlertDialog(
-              title: Row(
-                children: [
-                  const Icon(Icons.business_rounded, color: Color(0xFF9C27B0)),
-                  const SizedBox(width: 12),
-                  const Text('Sélectionner un bureau'),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-              content: SizedBox(
-                width: 400,
-                child: isLoading
-                    ? const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(32),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    : SingleChildScrollView(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _buildOfficeOption(
-                              context,
-                              null,
-                              '🌍 Tous les bureaux',
-                            ),
-                            const Divider(),
-                            ...offices.map(
-                              (office) => _buildOfficeOption(
-                                context,
-                                office,
-                                '${office.flag} ${office.name}',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildOfficeOption(
-    BuildContext context,
-    Office? office,
-    String label,
-  ) {
-    final isSelected = _selectedOfficeId == office?.id;
-    return ListTile(
-      leading: isSelected
-          ? const Icon(Icons.check_circle, color: Color(0xFF9C27B0))
-          : const Icon(Icons.circle_outlined, color: Colors.grey),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? const Color(0xFF9C27B0) : null,
-        ),
-      ),
-      onTap: () {
-        setState(() {
-          _selectedOfficeId = office?.id;
-          _selectedOfficeName = office?.name;
-        });
-        Navigator.of(context).pop();
-      },
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      hoverColor: const Color(0xFF9C27B0).withValues(alpha: 0.1),
-    );
-  }
-
   List<Parcel> get _filteredParcels {
     final now = DateTime.now();
 
-    // D'abord filtrer par bureau si un bureau est sélectionné
+    // Les colis sont déjà filtrés par bureau dans MainLayout
     var parcels = widget.parcels;
-    if (_selectedOfficeId != null && _isBoss) {
-      parcels = parcels
-          .where(
-            (p) =>
-                p.originOfficeId == _selectedOfficeId ||
-                p.destinationOfficeId == _selectedOfficeId,
-          )
-          .toList();
-    }
 
-    // Ensuite filtrer par période
+    // Filtrer par période
     switch (_selectedPeriod) {
       case 'today':
         return parcels.where((p) {
@@ -510,112 +387,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                 ),
-
-                // Office Selector Button (right side) - Only for Boss
-                if (_isBoss) ...[
-                  const SizedBox(width: 16),
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 20,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.business_rounded,
-                              size: 20,
-                              color: Color(0xFF9C27B0),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Bureau',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1A1A1A),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        InkWell(
-                          onTap: _showOfficeSelector,
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _selectedOfficeId != null
-                                  ? const Color(
-                                      0xFF9C27B0,
-                                    ).withValues(alpha: 0.1)
-                                  : Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _selectedOfficeId != null
-                                    ? const Color(0xFF9C27B0)
-                                    : Colors.grey.shade300,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _selectedOfficeName ?? '🌍 Tous les bureaux',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: _selectedOfficeId != null
-                                        ? const Color(0xFF9C27B0)
-                                        : Colors.grey.shade700,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Icon(
-                                  Icons.arrow_drop_down_rounded,
-                                  color: _selectedOfficeId != null
-                                      ? const Color(0xFF9C27B0)
-                                      : Colors.grey.shade600,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        if (_selectedOfficeId != null) ...[
-                          const SizedBox(height: 8),
-                          TextButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _selectedOfficeId = null;
-                                _selectedOfficeName = null;
-                              });
-                            },
-                            icon: const Icon(Icons.clear, size: 16),
-                            label: const Text('Réinitialiser'),
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.grey.shade600,
-                              padding: EdgeInsets.zero,
-                              textStyle: const TextStyle(fontSize: 12),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
               ],
             ),
             const SizedBox(height: 24),
