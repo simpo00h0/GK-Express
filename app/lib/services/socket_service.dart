@@ -5,8 +5,11 @@ import 'auth_service.dart';
 class SocketService {
   static io.Socket? _socket;
   static bool _isConnected = false;
+  static final Set<String> _onlineUserIds = {};
+  static Function(Set<String>)? _onPresenceUpdate;
 
   static bool get isConnected => _isConnected;
+  static Set<String> get onlineUserIds => Set.from(_onlineUserIds);
 
   // Initialize and connect to Socket.IO server
   static void connect() {
@@ -26,10 +29,14 @@ class SocketService {
       debugPrint('✅ Socket connected: ${_socket!.id}');
       _isConnected = true;
 
-      // Join office room when connected
+      // Join office room and register presence when connected
       final user = AuthService.currentUser;
-      if (user?.officeId != null) {
-        joinOfficeRoom(user!.officeId!, user.id);
+      if (user != null) {
+        if (user.officeId != null) {
+          joinOfficeRoom(user.officeId!, user.id);
+        }
+        // Register user presence
+        _socket!.emit('user_online', {'userId': user.id, 'role': user.role});
       }
     });
 
@@ -42,6 +49,42 @@ class SocketService {
       debugPrint('Socket connection error: $error');
       _isConnected = false;
     });
+
+    // Listen for presence updates
+    _socket!.on('presence_update', (data) {
+      if (data is Map) {
+        final List<dynamic> onlineIds = data['onlineUserIds'] ?? [];
+        _onlineUserIds.clear();
+        _onlineUserIds.addAll(onlineIds.cast<String>());
+        _onPresenceUpdate?.call(_onlineUserIds);
+      }
+    });
+
+    _socket!.on('user_connected', (data) {
+      if (data is Map && data['userId'] != null) {
+        _onlineUserIds.add(data['userId']);
+        _onPresenceUpdate?.call(_onlineUserIds);
+      }
+    });
+
+    _socket!.on('user_disconnected', (data) {
+      if (data is Map && data['userId'] != null) {
+        _onlineUserIds.remove(data['userId']);
+        _onPresenceUpdate?.call(_onlineUserIds);
+      }
+    });
+  }
+
+  // Set callback for presence updates
+  static void onPresenceUpdate(Function(Set<String>) callback) {
+    _onPresenceUpdate = callback;
+  }
+
+  // Request current online users list
+  static void requestOnlineUsers() {
+    if (_socket != null && _isConnected) {
+      _socket!.emit('get_online_users');
+    }
   }
 
   // Join office room

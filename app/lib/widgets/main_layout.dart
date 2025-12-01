@@ -3,8 +3,10 @@ import '../screens/dashboard_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/settings_screen.dart';
+import '../screens/users_screen.dart';
 import '../models/parcel.dart';
 import '../models/office.dart';
+import '../models/user.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/socket_service.dart';
@@ -23,7 +25,10 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _selectedIndex = 0;
   List<Parcel> _parcels = [];
+  List<User> _users = [];
   bool _isLoading = true;
+  bool _isLoadingUsers = false;
+  Set<String> _onlineUserIds = {};
 
   // Sélecteur de bureau global pour le Boss
   String? _selectedOfficeId;
@@ -35,6 +40,7 @@ class _MainLayoutState extends State<MainLayout> {
     super.initState();
     _loadParcels();
     _loadOffices();
+    _loadUsers();
     _initializeSocket();
   }
 
@@ -49,8 +55,31 @@ class _MainLayoutState extends State<MainLayout> {
     }
   }
 
+  Future<void> _loadUsers() async {
+    if (!_isBoss) return;
+    setState(() => _isLoadingUsers = true);
+    final users = await ApiService.fetchUsers();
+    if (mounted) {
+      setState(() {
+        _users = users;
+        _isLoadingUsers = false;
+      });
+    }
+    // Request online users after loading
+    SocketService.requestOnlineUsers();
+  }
+
   void _initializeSocket() {
     SocketService.connect();
+
+    // Listen for presence updates
+    SocketService.onPresenceUpdate((onlineIds) {
+      if (mounted) {
+        setState(() {
+          _onlineUserIds = onlineIds;
+        });
+      }
+    });
 
     SocketService.onNewParcel((data) async {
       debugPrint('📬 New parcel notification received: $data');
@@ -323,12 +352,21 @@ class _MainLayoutState extends State<MainLayout> {
           style: TextStyle(fontSize: 18, color: Colors.grey),
         ),
       ),
-      const Center(
-        child: Text(
-          'Utilisateurs (Bientôt)',
-          style: TextStyle(fontSize: 18, color: Colors.grey),
-        ),
-      ),
+      // Écran des utilisateurs (Boss uniquement)
+      _isBoss
+          ? UsersScreen(
+              users: _users,
+              offices: _cachedOffices ?? [],
+              isLoading: _isLoadingUsers,
+              onlineUserIds: _onlineUserIds,
+              onRefresh: _loadUsers,
+            )
+          : const Center(
+              child: Text(
+                'Accès réservé aux superviseurs',
+                style: TextStyle(fontSize: 18, color: Colors.grey),
+              ),
+            ),
       const SettingsScreen(),
     ];
 

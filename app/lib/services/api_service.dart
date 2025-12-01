@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/parcel.dart';
 import '../models/office.dart';
+import '../models/user.dart';
 import 'auth_service.dart';
 
 class ApiService {
@@ -52,6 +53,29 @@ class ApiService {
       }
     } catch (e) {
       debugPrint('Error fetching parcels: $e');
+      return [];
+    }
+  }
+
+  // Fetch all users (Boss only)
+  static Future<List<User>> fetchUsers() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/auth/users'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${AuthService.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => User.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load users');
+      }
+    } catch (e) {
+      debugPrint('Error fetching users: $e');
       return [];
     }
   }

@@ -4,6 +4,9 @@ class User {
   final String fullName;
   final String role; // 'boss' or 'agent'
   final String? officeId;
+  final String? officeName;
+  final DateTime? createdAt;
+  bool isOnline;
 
   User({
     required this.id,
@@ -11,6 +14,9 @@ class User {
     required this.fullName,
     required this.role,
     this.officeId,
+    this.officeName,
+    this.createdAt,
+    this.isOnline = false,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -20,6 +26,11 @@ class User {
       fullName: json['fullName'],
       role: json['role'],
       officeId: json['officeId'],
+      officeName: json['officeName'],
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : null,
+      isOnline: json['isOnline'] ?? false,
     );
   }
 
@@ -30,6 +41,9 @@ class User {
       'fullName': fullName,
       'role': role,
       'officeId': officeId,
+      'officeName': officeName,
+      'createdAt': createdAt?.toIso8601String(),
+      'isOnline': isOnline,
     };
   }
 

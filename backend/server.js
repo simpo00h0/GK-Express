@@ -34,6 +34,9 @@ app.get('/', (req, res) => {
   res.send('GK Express Backend is Running');
 });
 
+// Track online users
+const onlineUsers = new Map(); // socketId -> { userId, role }
+
 // Socket.IO Connection
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
@@ -45,7 +48,34 @@ io.on('connection', (socket) => {
     console.log(`User ${userId} joined office ${officeId}`);
   });
 
+  // User comes online
+  socket.on('user_online', (data) => {
+    const { userId, role } = data;
+    onlineUsers.set(socket.id, { userId, role });
+    console.log(`User ${userId} is now online (${role})`);
+
+    // Broadcast to all clients
+    io.emit('user_connected', { userId });
+
+    // Send current online users list
+    const onlineUserIds = Array.from(onlineUsers.values()).map(u => u.userId);
+    socket.emit('presence_update', { onlineUserIds });
+  });
+
+  // Request online users list
+  socket.on('get_online_users', () => {
+    const onlineUserIds = Array.from(onlineUsers.values()).map(u => u.userId);
+    socket.emit('presence_update', { onlineUserIds });
+  });
+
   socket.on('disconnect', () => {
+    const userData = onlineUsers.get(socket.id);
+    if (userData) {
+      console.log(`User ${userData.userId} went offline`);
+      onlineUsers.delete(socket.id);
+      // Broadcast to all clients
+      io.emit('user_disconnected', { userId: userData.userId });
+    }
     console.log('Client disconnected:', socket.id);
   });
 });
