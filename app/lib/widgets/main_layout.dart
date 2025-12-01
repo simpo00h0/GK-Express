@@ -32,20 +32,21 @@ class _MainLayoutState extends State<MainLayout> {
 
   void _initializeSocket() {
     SocketService.connect();
-    
+
     SocketService.onNewParcel((data) async {
       print('📬 New parcel notification received: $data');
-      
+
       if (mounted) {
         InAppNotification.show(
           context,
           title: '📦 Nouveau Colis Reçu !',
-          message: 'De ${data['originOfficeId'] ?? 'Inconnu'} → ${data['destination'] ?? ''}\nExpéditeur: ${data['senderName'] ?? 'Inconnu'}',
+          message:
+              'De ${data['originOfficeId'] ?? 'Inconnu'} → ${data['destination'] ?? ''}\nExpéditeur: ${data['senderName'] ?? 'Inconnu'}',
           icon: Icons.local_shipping_rounded,
           color: const Color(0xFF10B981),
         );
       }
-      
+
       try {
         await NotificationService.showNewParcelNotification(
           parcelId: data['parcelId'] ?? '',
@@ -56,7 +57,7 @@ class _MainLayoutState extends State<MainLayout> {
       } catch (e) {
         print('System notification failed: $e');
       }
-      
+
       _loadParcels();
     });
   }
@@ -82,18 +83,67 @@ class _MainLayoutState extends State<MainLayout> {
     });
   }
 
+  List<Parcel> _getSentParcels() {
+    final userOfficeId = AuthService.currentUser?.officeId;
+    if (userOfficeId == null) return [];
+    return _parcels.where((p) => p.originOfficeId == userOfficeId).toList();
+  }
+
+  List<Parcel> _getReceivedParcels() {
+    final userOfficeId = AuthService.currentUser?.officeId;
+    if (userOfficeId == null) return [];
+    return _parcels
+        .where((p) => p.destinationOfficeId == userOfficeId)
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Index 0: Dashboard
+    // Index 1: Colis Envoyés
+    // Index 2: Colis Reçus
+    // Index 3: Tous les colis
+    // Index 4: Messages
+    // Index 5: Utilisateurs
+    // Index 6: Paramètres
     final List<Widget> screens = [
       DashboardScreen(parcels: _parcels, isLoading: _isLoading),
+      HomeScreen(
+        parcels: _getSentParcels(),
+        isLoading: _isLoading,
+        onParcelAdded: _addParcel,
+        onRefresh: _loadParcels,
+        title: 'Colis Envoyés',
+        emptyMessage: 'Aucun colis envoyé',
+      ),
+      HomeScreen(
+        parcels: _getReceivedParcels(),
+        isLoading: _isLoading,
+        onParcelAdded: _addParcel,
+        onRefresh: _loadParcels,
+        title: 'Colis Reçus',
+        emptyMessage: 'Aucun colis reçu',
+      ),
       HomeScreen(
         parcels: _parcels,
         isLoading: _isLoading,
         onParcelAdded: _addParcel,
         onRefresh: _loadParcels,
+        title: 'Tous les Colis',
+        emptyMessage: 'Aucun colis',
       ),
-      const Center(child: Text('Messages (Bientôt)', style: TextStyle(fontSize: 18, color: Colors.grey))),
-      const Center(child: Text('Utilisateurs (Bientôt)', style: TextStyle(fontSize: 18, color: Colors.grey))),
+      const Center(
+        child: Text(
+          'Messages (Bientôt)',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      ),
+      const Center(
+        child: Text(
+          'Utilisateurs (Bientôt)',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      ),
       const SettingsScreen(),
     ];
 
@@ -114,9 +164,7 @@ class _MainLayoutState extends State<MainLayout> {
               }
             },
           ),
-          Expanded(
-            child: screens[_selectedIndex],
-          ),
+          Expanded(child: screens[_selectedIndex]),
         ],
       ),
     );

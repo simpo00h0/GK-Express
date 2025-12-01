@@ -10,6 +10,8 @@ class HomeScreen extends StatefulWidget {
   final bool isLoading;
   final Function(Parcel) onParcelAdded;
   final Function() onRefresh;
+  final String title;
+  final String emptyMessage;
 
   const HomeScreen({
     super.key,
@@ -17,6 +19,8 @@ class HomeScreen extends StatefulWidget {
     required this.isLoading,
     required this.onParcelAdded,
     required this.onRefresh,
+    this.title = 'Gestion des Colis',
+    this.emptyMessage = 'Aucun colis pour le moment',
   });
 
   @override
@@ -31,23 +35,27 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Parcel> get _filteredParcels {
     var filtered = widget.parcels;
     final userOfficeId = AuthService.currentUser?.officeId;
-    
+
     // Filter by direction (sent/received)
     if (_parcelDirection != 'all' && userOfficeId != null) {
       if (_parcelDirection == 'sent') {
         // Colis envoyés depuis notre bureau
-        filtered = filtered.where((p) => p.originOfficeId == userOfficeId).toList();
+        filtered = filtered
+            .where((p) => p.originOfficeId == userOfficeId)
+            .toList();
       } else if (_parcelDirection == 'received') {
         // Colis reçus à notre bureau
-        filtered = filtered.where((p) => p.destinationOfficeId == userOfficeId).toList();
+        filtered = filtered
+            .where((p) => p.destinationOfficeId == userOfficeId)
+            .toList();
       }
     }
-    
+
     // Filter by status
     if (_filterStatus != 'all') {
       filtered = filtered.where((p) => p.status.name == _filterStatus).toList();
     }
-    
+
     // Filter by search
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
@@ -58,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
             parcel.destination.toLowerCase().contains(query);
       }).toList();
     }
-    
+
     return filtered;
   }
 
@@ -67,7 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Gestion des Colis'),
+        title: Text(widget.title),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -113,11 +121,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildDirectionChip('Tous', 'all', Icons.all_inclusive_rounded),
+                      _buildDirectionChip(
+                        'Tous',
+                        'all',
+                        Icons.all_inclusive_rounded,
+                      ),
                       const SizedBox(width: 8),
-                      _buildDirectionChip('Envoyés', 'sent', Icons.upload_rounded),
+                      _buildDirectionChip(
+                        'Envoyés',
+                        'sent',
+                        Icons.upload_rounded,
+                      ),
                       const SizedBox(width: 8),
-                      _buildDirectionChip('Reçus', 'received', Icons.download_rounded),
+                      _buildDirectionChip(
+                        'Reçus',
+                        'received',
+                        Icons.download_rounded,
+                      ),
                     ],
                   ),
                 ),
@@ -127,54 +147,78 @@ class _HomeScreenState extends State<HomeScreen> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildFilterChip('Tous', 'all', Icons.all_inclusive_rounded),
+                      _buildFilterChip(
+                        'Tous',
+                        'all',
+                        Icons.all_inclusive_rounded,
+                      ),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Créés', 'created', Icons.fiber_new_rounded),
+                      _buildFilterChip(
+                        'Créés',
+                        'created',
+                        Icons.fiber_new_rounded,
+                      ),
                       const SizedBox(width: 8),
-                      _buildFilterChip('En Transit', 'inTransit', Icons.local_shipping_rounded),
+                      _buildFilterChip(
+                        'En Transit',
+                        'inTransit',
+                        Icons.local_shipping_rounded,
+                      ),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Arrivés', 'arrived', Icons.location_on_rounded),
+                      _buildFilterChip(
+                        'Arrivés',
+                        'arrived',
+                        Icons.location_on_rounded,
+                      ),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Livrés', 'delivered', Icons.check_circle_rounded),
+                      _buildFilterChip(
+                        'Livrés',
+                        'delivered',
+                        Icons.check_circle_rounded,
+                      ),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Problèmes', 'issue', Icons.warning_rounded),
+                      _buildFilterChip(
+                        'Problèmes',
+                        'issue',
+                        Icons.warning_rounded,
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          
+
           // Parcels List
           Expanded(
             child: widget.isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _filteredParcels.isEmpty
-                    ? _buildEmptyState()
-                    : RefreshIndicator(
-                        onRefresh: () async => widget.onRefresh(),
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(20),
-                          itemCount: _filteredParcels.length,
-                          itemBuilder: (context, index) {
-                            final parcel = _filteredParcels[index];
-                            return EnhancedParcelCard(
-                              parcel: parcel,
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ParcelDetailScreen(
-                                      parcel: parcel,
-                                      onStatusUpdated: widget.onRefresh,
-                                    ),
-                                  ),
-                                );
-                              },
+                ? _buildEmptyState()
+                : RefreshIndicator(
+                    onRefresh: () async => widget.onRefresh(),
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: _filteredParcels.length,
+                      itemBuilder: (context, index) {
+                        final parcel = _filteredParcels[index];
+                        return EnhancedParcelCard(
+                          parcel: parcel,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ParcelDetailScreen(
+                                  parcel: parcel,
+                                  onStatusUpdated: widget.onRefresh,
+                                ),
+                              ),
                             );
                           },
-                        ),
-                      ),
+                        );
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
@@ -183,9 +227,8 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CreateParcelScreen(
-                onParcelCreated: widget.onParcelAdded,
-              ),
+              builder: (context) =>
+                  CreateParcelScreen(onParcelCreated: widget.onParcelAdded),
             ),
           );
         },
@@ -200,11 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return FilterChip(
       label: Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16),
-          const SizedBox(width: 6),
-          Text(label),
-        ],
+        children: [Icon(icon, size: 16), const SizedBox(width: 6), Text(label)],
       ),
       selected: isSelected,
       onSelected: (selected) {
@@ -225,11 +264,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return FilterChip(
       label: Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16),
-          const SizedBox(width: 6),
-          Text(label),
-        ],
+        children: [Icon(icon, size: 16), const SizedBox(width: 6), Text(label)],
       ),
       selected: isSelected,
       onSelected: (selected) {
@@ -249,13 +284,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final userOfficeId = AuthService.currentUser?.officeId;
     final isSent = parcel.originOfficeId == userOfficeId;
     final isReceived = parcel.destinationOfficeId == userOfficeId;
-    
+
     // Determine border color and badge
     Color borderColor = Colors.grey.shade200;
     Color badgeColor = Colors.grey;
     IconData badgeIcon = Icons.swap_horiz_rounded;
     String badgeLabel = '';
-    
+
     if (isSent && !isReceived) {
       // Colis envoyé
       borderColor = const Color(0xFF3B82F6); // Bleu
@@ -269,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
       badgeIcon = Icons.download_rounded;
       badgeLabel = 'Reçu';
     }
-    
+
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -319,7 +354,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Badge direction
                   if (badgeLabel.isNotEmpty)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: badgeColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -345,7 +383,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 4),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: _getStatusColor(parcel.status).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -373,7 +414,11 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  Icon(Icons.location_on_rounded, size: 14, color: Colors.grey.shade600),
+                  Icon(
+                    Icons.location_on_rounded,
+                    size: 14,
+                    color: Colors.grey.shade600,
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
@@ -391,7 +436,11 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.person_outline_rounded, size: 14, color: Colors.grey.shade500),
+                  Icon(
+                    Icons.person_outline_rounded,
+                    size: 14,
+                    color: Colors.grey.shade500,
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
@@ -425,14 +474,18 @@ class _HomeScreenState extends State<HomeScreen> {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              _searchQuery.isNotEmpty ? Icons.search_off_rounded : Icons.inventory_2_outlined,
+              _searchQuery.isNotEmpty
+                  ? Icons.search_off_rounded
+                  : Icons.inventory_2_outlined,
               size: 64,
               color: Colors.grey.shade400,
             ),
           ),
           const SizedBox(height: 24),
           Text(
-            _searchQuery.isNotEmpty ? 'Aucun résultat trouvé' : 'Aucun colis pour le moment',
+            _searchQuery.isNotEmpty
+                ? 'Aucun résultat trouvé'
+                : widget.emptyMessage,
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
@@ -444,10 +497,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _searchQuery.isNotEmpty
                 ? 'Essayez une autre recherche'
                 : 'Créez votre premier colis pour commencer',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
           ),
           if (_searchQuery.isEmpty) ...[
             const SizedBox(height: 24),
