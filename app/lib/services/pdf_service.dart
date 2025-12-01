@@ -15,82 +15,132 @@ class PdfService {
     Parcel parcel,
     BuildContext context,
   ) async {
-    final pdf = await _generateParcelPdf(parcel);
+    try {
+      // Afficher un indicateur de chargement
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: Color(0xFF9C27B0)),
+                  SizedBox(height: 16),
+                  Text('Préparation du PDF...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
 
-    // Obtenir la liste des imprimantes disponibles
-    final printers = await Printing.listPrinters();
+      final pdf = await _generateParcelPdf(parcel);
 
-    if (printers.isEmpty) {
-      // Aucune imprimante trouvée - sauvegarder le PDF à la place
+      // Fermer l'indicateur de chargement
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Aucune imprimante trouvée. Le PDF sera sauvegardé.'),
-            backgroundColor: Colors.orange,
+        Navigator.of(context).pop();
+      }
+
+      // Obtenir la liste des imprimantes disponibles
+      final printers = await Printing.listPrinters();
+
+      debugPrint('Imprimantes trouvées: ${printers.length}');
+      for (var p in printers) {
+        debugPrint('  - ${p.name} (default: ${p.isDefault})');
+      }
+
+      if (printers.isEmpty) {
+        // Aucune imprimante trouvée - utiliser l'aperçu système
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Aucune imprimante détectée. Ouverture de l\'aperçu...',
+              ),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          // Ouvrir l'aperçu d'impression système
+          await Printing.layoutPdf(onLayout: (format) async => pdf);
+        }
+        return;
+      }
+
+      // Afficher le dialogue de sélection d'imprimante
+      if (context.mounted) {
+        await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.print, color: Color(0xFF9C27B0)),
+                SizedBox(width: 12),
+                Text('Choisir une imprimante'),
+              ],
+            ),
+            content: SizedBox(
+              width: 300,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: printers.length,
+                itemBuilder: (context, index) {
+                  final printer = printers[index];
+                  return ListTile(
+                    leading: Icon(
+                      printer.isDefault ? Icons.print : Icons.print_outlined,
+                      color: printer.isDefault
+                          ? const Color(0xFF9C27B0)
+                          : Colors.grey,
+                    ),
+                    title: Text(printer.name),
+                    subtitle: printer.isDefault
+                        ? const Text('Par défaut')
+                        : null,
+                    onTap: () async {
+                      Navigator.of(ctx).pop();
+                      await _printToPrinter(pdf, printer, context);
+                    },
+                  );
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Annuler'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  Navigator.of(ctx).pop();
+                  // Utiliser l'aperçu d'impression système
+                  await Printing.layoutPdf(onLayout: (format) async => pdf);
+                },
+                icon: const Icon(Icons.preview),
+                label: const Text('Aperçu'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF9C27B0),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
           ),
         );
       }
-      await _savePdfToFile(pdf, parcel);
-      return;
-    }
-
-    // Afficher le dialogue de sélection d'imprimante
-    if (context.mounted) {
-      await showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.print, color: Color(0xFF9C27B0)),
-              SizedBox(width: 12),
-              Text('Choisir une imprimante'),
-            ],
+    } catch (e) {
+      // Fermer le dialogue de chargement si ouvert
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la préparation: $e'),
+            backgroundColor: Colors.red,
           ),
-          content: SizedBox(
-            width: 300,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: printers.length,
-              itemBuilder: (context, index) {
-                final printer = printers[index];
-                return ListTile(
-                  leading: Icon(
-                    printer.isDefault ? Icons.print : Icons.print_outlined,
-                    color: printer.isDefault
-                        ? const Color(0xFF9C27B0)
-                        : Colors.grey,
-                  ),
-                  title: Text(printer.name),
-                  subtitle: printer.isDefault ? const Text('Par défaut') : null,
-                  onTap: () async {
-                    Navigator.of(ctx).pop();
-                    await _printToPrinter(pdf, printer, context);
-                  },
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Annuler'),
-            ),
-            ElevatedButton.icon(
-              onPressed: () async {
-                Navigator.of(ctx).pop();
-                // Utiliser l'aperçu d'impression système
-                await Printing.layoutPdf(onLayout: (format) async => pdf);
-              },
-              icon: const Icon(Icons.preview),
-              label: const Text('Aperçu'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9C27B0),
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      );
+        );
+      }
+      debugPrint('Erreur PDF: $e');
     }
   }
 
