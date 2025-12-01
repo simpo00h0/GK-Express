@@ -41,7 +41,10 @@ class ParcelDetailScreen extends StatelessWidget {
               icon: const Icon(Icons.edit_rounded, size: 18),
               label: const Text('Modifier Statut'),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
               ),
             ),
           ),
@@ -60,7 +63,7 @@ class ParcelDetailScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 20,
                     offset: const Offset(0, 4),
                   ),
@@ -95,7 +98,7 @@ class ParcelDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Status Card
             Container(
               padding: const EdgeInsets.all(24),
@@ -103,13 +106,15 @@ class ParcelDetailScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     _getStatusColor(parcel.status),
-                    _getStatusColor(parcel.status).withOpacity(0.8),
+                    _getStatusColor(parcel.status).withValues(alpha: 0.8),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: _getStatusColor(parcel.status).withOpacity(0.3),
+                    color: _getStatusColor(
+                      parcel.status,
+                    ).withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -120,7 +125,7 @@ class ParcelDetailScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -156,7 +161,7 @@ class ParcelDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Details Cards
             Row(
               children: [
@@ -195,7 +200,13 @@ class ParcelDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard(String title, String value, String subtitle, IconData icon, Color color) {
+  Widget _buildInfoCard(
+    String title,
+    String value,
+    String subtitle,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -204,7 +215,7 @@ class ParcelDetailScreen extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -218,7 +229,7 @@ class ParcelDetailScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color, size: 20),
@@ -247,10 +258,7 @@ class ParcelDetailScreen extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
           ),
         ],
       ),

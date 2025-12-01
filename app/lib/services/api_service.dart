@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/parcel.dart';
 import 'auth_service.dart';
@@ -21,7 +22,7 @@ class ApiService {
           'Authorization': 'Bearer ${AuthService.token}',
         },
       );
-      
+
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((json) => Parcel.fromJson(json)).toList();
@@ -29,7 +30,7 @@ class ApiService {
         throw Exception('Failed to load parcels');
       }
     } catch (e) {
-      print('Error fetching parcels: $e');
+      debugPrint('Error fetching parcels: $e');
       return [];
     }
   }
@@ -72,7 +73,7 @@ class ApiService {
         throw Exception('Failed to create parcel');
       }
     } catch (e) {
-      print('Error creating parcel: $e');
+      debugPrint('Error creating parcel: $e');
       return null;
     }
   }
@@ -91,7 +92,7 @@ class ApiService {
 
       return response.statusCode == 200;
     } catch (e) {
-      print('Error updating parcel status: $e');
+      debugPrint('Error updating parcel status: $e');
       return false;
     }
   }

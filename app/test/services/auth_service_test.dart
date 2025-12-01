@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app/services/auth_service.dart';
-import 'package:app/models/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -12,7 +11,7 @@ void main() {
     });
 
     test('isLoggedIn should return false when no token', () async {
-      expect(await AuthService.isLoggedIn, false);
+      expect(await AuthService.isLoggedIn(), false);
     });
 
     test('currentUser should be null initially after logout', () async {
@@ -26,7 +25,7 @@ void main() {
 
       expect(AuthService.token, null);
       expect(AuthService.currentUser, null);
-      expect(await AuthService.isLoggedIn, false);
+      expect(await AuthService.isLoggedIn(), false);
     });
 
     test('token getter should return null when not logged in', () {
@@ -35,13 +34,13 @@ void main() {
 
     test('isLoggedIn should be consistent with token state', () async {
       final hasToken = AuthService.token != null;
-      expect(await AuthService.isLoggedIn, hasToken);
+      expect(await AuthService.isLoggedIn(), hasToken);
     });
 
     test('logout should be idempotent', () async {
       await AuthService.logout();
       await AuthService.logout();
-      
+
       expect(AuthService.token, null);
       expect(AuthService.currentUser, null);
     });
@@ -50,8 +49,8 @@ void main() {
       for (int i = 0; i < 5; i++) {
         await AuthService.logout();
       }
-      
-      expect(await AuthService.isLoggedIn, false);
+
+      expect(await AuthService.isLoggedIn(), false);
     });
   });
 }

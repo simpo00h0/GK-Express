@@ -50,7 +50,9 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
           ),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     } else if (mounted) {
@@ -65,7 +67,9 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
           ),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     }
@@ -75,9 +79,7 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        title: const Text('Mettre à jour le statut'),
-      ),
+      appBar: AppBar(title: const Text('Mettre à jour le statut')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -95,7 +97,7 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF667EEA).withOpacity(0.3),
+                    color: const Color(0xFF667EEA).withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -109,7 +111,7 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -148,7 +150,11 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_rounded, color: Colors.white70, size: 16),
+                      const Icon(
+                        Icons.location_on_rounded,
+                        color: Colors.white70,
+                        size: 16,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         widget.parcel.destination,
@@ -164,7 +170,7 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            
+
             const Text(
               'Sélectionner le nouveau statut:',
               style: TextStyle(
@@ -174,7 +180,7 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            
+
             // Status Options
             ...ParcelStatus.values.map((status) {
               return Padding(
@@ -182,9 +188,9 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
                 child: _buildStatusOption(status),
               );
             }),
-            
+
             const SizedBox(height: 32),
-            
+
             // Update Button
             SizedBox(
               height: 56,
@@ -204,7 +210,9 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
                         width: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : const Row(
@@ -233,14 +241,14 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
   Widget _buildStatusOption(ParcelStatus status) {
     final isSelected = _selectedStatus == status;
     final color = _getStatusColor(status);
-    
+
     return InkWell(
       onTap: () => setState(() => _selectedStatus = status),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : Colors.white,
+          color: isSelected ? color.withValues(alpha: 0.1) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? color : Colors.grey.shade200,
@@ -249,7 +257,7 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: color.withOpacity(0.2),
+                    color: color.withValues(alpha: 0.2),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -261,14 +269,10 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(isSelected ? 0.2 : 0.1),
+                color: color.withValues(alpha: isSelected ? 0.2 : 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                _getStatusIcon(status),
-                color: color,
-                size: 24,
-              ),
+              child: Icon(_getStatusIcon(status), color: color, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -279,17 +283,16 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
                     _getStatusLabel(status),
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w600,
                       color: isSelected ? color : const Color(0xFF1A1A1A),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _getStatusDescription(status),
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                   ),
                 ],
               ),
@@ -297,10 +300,7 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
             if (isSelected)
               Container(
                 padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                 child: const Icon(
                   Icons.check_rounded,
                   color: Colors.white,

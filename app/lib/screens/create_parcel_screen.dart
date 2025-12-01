@@ -24,7 +24,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
   final _priceController = TextEditingController();
   bool _isPaid = false;
   bool _isLoading = false;
-  
+
   List<Office> _offices = [];
   Office? _originOffice;
   Office? _destinationOffice;
@@ -65,10 +65,14 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
       if (_originOffice == null || _destinationOffice == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Veuillez sélectionner les bureaux d\'origine et de destination'),
+            content: const Text(
+              'Veuillez sélectionner les bureaux d\'origine et de destination',
+            ),
             backgroundColor: Colors.orange,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
         return;
@@ -95,10 +99,8 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => ParcelDetailScreen(
-              parcel: newParcel,
-              onStatusUpdated: () {},
-            ),
+            builder: (context) =>
+                ParcelDetailScreen(parcel: newParcel, onStatusUpdated: () {}),
           ),
         );
       } else if (mounted) {
@@ -113,9 +115,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        title: const Text('Créer un Nouveau Colis'),
-      ),
+      appBar: AppBar(title: const Text('Créer un Nouveau Colis')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -130,7 +130,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                 const Color(0xFF9C27B0),
                 [
                   DropdownButtonFormField<Office>(
-                    value: _originOffice,
+                    initialValue: _originOffice,
                     decoration: const InputDecoration(
                       labelText: 'Bureau d\'Origine',
                       prefixIcon: Icon(Icons.location_city_rounded),
@@ -141,14 +141,15 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                         child: Text('${office.flag} ${office.name}'),
                       );
                     }).toList(),
-                    onChanged: AuthService.currentUser?.role == 'agent' 
+                    onChanged: AuthService.currentUser?.role == 'agent'
                         ? null // Agents can't change origin office
                         : (value) => setState(() => _originOffice = value),
-                    validator: (value) => value == null ? 'Bureau d\'origine requis' : null,
+                    validator: (value) =>
+                        value == null ? 'Bureau d\'origine requis' : null,
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<Office>(
-                    value: _destinationOffice,
+                    initialValue: _destinationOffice,
                     decoration: const InputDecoration(
                       labelText: 'Bureau de Destination',
                       prefixIcon: Icon(Icons.flight_takeoff_rounded),
@@ -159,13 +160,15 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                         child: Text('${office.flag} ${office.name}'),
                       );
                     }).toList(),
-                    onChanged: (value) => setState(() => _destinationOffice = value),
-                    validator: (value) => value == null ? 'Bureau de destination requis' : null,
+                    onChanged: (value) =>
+                        setState(() => _destinationOffice = value),
+                    validator: (value) =>
+                        value == null ? 'Bureau de destination requis' : null,
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-              
+
               _buildSectionCard(
                 'Expéditeur',
                 Icons.person_outline_rounded,
@@ -194,7 +197,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              
+
               _buildSectionCard(
                 'Destinataire',
                 Icons.person_rounded,
@@ -223,7 +226,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              
+
               _buildSectionCard(
                 'Détails de l\'Expédition',
                 Icons.local_shipping_rounded,
@@ -260,16 +263,22 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: _isPaid ? Colors.green.shade50 : Colors.grey.shade50,
+                      color: _isPaid
+                          ? Colors.green.shade50
+                          : Colors.grey.shade50,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _isPaid ? Colors.green.shade200 : Colors.grey.shade200,
+                        color: _isPaid
+                            ? Colors.green.shade200
+                            : Colors.grey.shade200,
                       ),
                     ),
                     child: Row(
                       children: [
                         Icon(
-                          _isPaid ? Icons.check_circle_rounded : Icons.pending_rounded,
+                          _isPaid
+                              ? Icons.check_circle_rounded
+                              : Icons.pending_rounded,
                           color: _isPaid ? Colors.green : Colors.grey.shade600,
                         ),
                         const SizedBox(width: 12),
@@ -279,14 +288,17 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: _isPaid ? Colors.green.shade900 : Colors.grey.shade700,
+                              color: _isPaid
+                                  ? Colors.green.shade900
+                                  : Colors.grey.shade700,
                             ),
                           ),
                         ),
                         Switch(
                           value: _isPaid,
                           onChanged: (value) => setState(() => _isPaid = value),
-                          activeColor: Colors.green,
+                          activeTrackColor: Colors.green.withValues(alpha: 0.5),
+                          activeThumbColor: Colors.green,
                         ),
                       ],
                     ),
@@ -294,7 +306,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                 ],
               ),
               const SizedBox(height: 32),
-              
+
               SizedBox(
                 height: 56,
                 child: ElevatedButton(
@@ -309,7 +321,9 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                           width: 24,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : const Row(
@@ -336,7 +350,12 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
     );
   }
 
-  Widget _buildSectionCard(String title, IconData icon, Color color, List<Widget> children) {
+  Widget _buildSectionCard(
+    String title,
+    IconData icon,
+    Color color,
+    List<Widget> children,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -344,7 +363,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -358,7 +377,7 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 24),

@@ -64,7 +64,7 @@ class _EnhancedParcelCardState extends State<EnhancedParcelCard> {
         duration: AppTheme.animationDuration,
         curve: AppTheme.animationCurve,
         transform: Matrix4.identity()
-          ..translate(0.0, _isHovered ? -4.0 : 0.0),
+          ..setTranslationRaw(0.0, _isHovered ? -4.0 : 0.0, 0.0),
         child: AnimatedContainer(
           duration: AppTheme.animationDuration,
           curve: AppTheme.animationCurve,
@@ -74,7 +74,7 @@ class _EnhancedParcelCardState extends State<EnhancedParcelCard> {
             borderRadius: AppTheme.borderRadius,
             border: Border.all(
               color: _isHovered
-                  ? AppTheme.primary.withOpacity(0.3)
+                  ? AppTheme.primary.withValues(alpha: 0.3)
                   : AppTheme.divider,
               width: 1,
             ),
@@ -102,7 +102,7 @@ class _EnhancedParcelCardState extends State<EnhancedParcelCard> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.1),
+                            color: statusColor.withValues(alpha: 0.1),
                             borderRadius: AppTheme.borderRadiusSmall,
                           ),
                           child: Row(
@@ -137,7 +137,7 @@ class _EnhancedParcelCardState extends State<EnhancedParcelCard> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: _directionColor.withOpacity(0.1),
+                              color: _directionColor.withValues(alpha: 0.1),
                               borderRadius: AppTheme.borderRadiusSmall,
                             ),
                             child: Row(
@@ -226,7 +226,9 @@ class _EnhancedParcelCardState extends State<EnhancedParcelCard> {
                         const SizedBox(width: 12),
                         _buildInfoRow(
                           icon: Icons.calendar_today_rounded,
-                          text: DateFormat('dd/MM/yy').format(widget.parcel.createdAt),
+                          text: DateFormat(
+                            'dd/MM/yy',
+                          ).format(widget.parcel.createdAt),
                           color: AppTheme.textSecondary,
                         ),
                       ],
@@ -242,7 +244,7 @@ class _EnhancedParcelCardState extends State<EnhancedParcelCard> {
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: AppTheme.success.withOpacity(0.1),
+                            color: AppTheme.success.withValues(alpha: 0.1),
                             borderRadius: AppTheme.borderRadiusSmall,
                           ),
                           child: Row(
@@ -273,8 +275,8 @@ class _EnhancedParcelCardState extends State<EnhancedParcelCard> {
                           ),
                           decoration: BoxDecoration(
                             color: widget.parcel.isPaid
-                                ? AppTheme.success.withOpacity(0.1)
-                                : AppTheme.warning.withOpacity(0.1),
+                                ? AppTheme.success.withValues(alpha: 0.1)
+                                : AppTheme.warning.withValues(alpha: 0.1),
                             borderRadius: AppTheme.borderRadiusSmall,
                           ),
                           child: Row(

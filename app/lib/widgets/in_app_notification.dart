@@ -14,7 +14,7 @@ class InAppNotification {
     _currentOverlay?.remove();
 
     final overlay = Overlay.of(context);
-    
+
     _currentOverlay = OverlayEntry(
       builder: (context) => Positioned(
         top: 80,
@@ -78,18 +78,12 @@ class _NotificationCardState extends State<_NotificationCard>
     _slideAnimation = Tween<Offset>(
       begin: const Offset(1, 0),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _fadeAnimation = Tween<double>(
       begin: 0,
       end: 1,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
     _controller.forward();
   }
@@ -122,7 +116,7 @@ class _NotificationCardState extends State<_NotificationCard>
               border: Border.all(color: widget.color, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: widget.color.withOpacity(0.2),
+                  color: widget.color.withValues(alpha: 0.2),
                   blurRadius: 20,
                   offset: const Offset(0, 4),
                 ),
@@ -133,14 +127,10 @@ class _NotificationCardState extends State<_NotificationCard>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: widget.color.withOpacity(0.1),
+                    color: widget.color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    widget.icon,
-                    color: widget.color,
-                    size: 28,
-                  ),
+                  child: Icon(widget.icon, color: widget.color, size: 28),
                 ),
                 const SizedBox(width: 16),
                 Expanded(

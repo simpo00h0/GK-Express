@@ -16,11 +16,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _isEditingName = false;
   bool _isChangingPassword = false;
   bool _isLoading = false;
-  
+
   User? _user;
   Office? _office;
 
@@ -34,12 +34,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _user = AuthService.currentUser;
     if (_user != null) {
       _nameController.text = _user!.fullName;
-      
+
       // Load office info
       final offices = await AuthService.fetchOffices();
       _office = offices.firstWhere(
         (o) => o.id == _user!.officeId,
-        orElse: () => Office(id: '', name: 'Inconnu', country: '', countryCode: ''),
+        orElse: () =>
+            Office(id: '', name: 'Inconnu', country: '', countryCode: ''),
       );
       setState(() {});
     }
@@ -116,16 +117,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     if (_user == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        title: const Text('Paramètres'),
-      ),
+      appBar: AppBar(title: const Text('Paramètres')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -145,7 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -172,7 +169,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _user!.role == 'boss' ? 'Boss' : 'Agent',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                           ),
                         ),
                       ],
@@ -255,7 +252,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     : () {
                                         setState(() {
                                           _isEditingName = false;
-                                          _nameController.text = _user!.fullName;
+                                          _nameController.text =
+                                              _user!.fullName;
                                         });
                                       },
                                 child: const Text('Annuler'),
@@ -267,7 +265,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ? const SizedBox(
                                         width: 20,
                                         height: 20,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
                                       )
                                     : const Text('Enregistrer'),
                               ),
@@ -291,7 +291,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: const Text('••••••••'),
                     trailing: IconButton(
                       icon: const Icon(Icons.edit_rounded),
-                      onPressed: () => setState(() => _isChangingPassword = true),
+                      onPressed: () =>
+                          setState(() => _isChangingPassword = true),
                     ),
                   )
                 else
@@ -369,7 +370,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ? const SizedBox(
                                         width: 20,
                                         height: 20,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
                                       )
                                     : const Text('Changer'),
                               ),
@@ -387,14 +390,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSection({required String title, required List<Widget> children}) {
+  Widget _buildSection({
+    required String title,
+    required List<Widget> children,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -431,10 +437,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       leading: Icon(icon, color: Colors.grey.shade600),
       title: Text(
         label,
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.grey.shade600,
-        ),
+        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
       ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -452,16 +455,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 2),
             Text(
               subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade500,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
             ),
           ],
         ],
       ),
       trailing: !isEditable
-          ? Icon(Icons.lock_outline_rounded, color: Colors.grey.shade400, size: 20)
+          ? Icon(
+              Icons.lock_outline_rounded,
+              color: Colors.grey.shade400,
+              size: 20,
+            )
           : null,
     );
   }

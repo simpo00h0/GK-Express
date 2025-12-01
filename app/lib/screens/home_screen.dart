@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/parcel.dart';
-import '../services/auth_service.dart';
 import '../widgets/enhanced_parcel_card.dart';
 import 'create_parcel_screen.dart';
 import 'parcel_detail_screen.dart';
@@ -32,26 +31,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   String _filterStatus = 'all';
-  String _parcelDirection = 'all'; // 'all', 'sent', 'received'
 
   List<Parcel> get _filteredParcels {
     var filtered = widget.parcels;
-    final userOfficeId = AuthService.currentUser?.officeId;
-
-    // Filter by direction (sent/received)
-    if (_parcelDirection != 'all' && userOfficeId != null) {
-      if (_parcelDirection == 'sent') {
-        // Colis envoyés depuis notre bureau
-        filtered = filtered
-            .where((p) => p.originOfficeId == userOfficeId)
-            .toList();
-      } else if (_parcelDirection == 'received') {
-        // Colis reçus à notre bureau
-        filtered = filtered
-            .where((p) => p.destinationOfficeId == userOfficeId)
-            .toList();
-      }
-    }
 
     // Filter by status
     if (_filterStatus != 'all') {
@@ -96,7 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -229,214 +211,11 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() => _filterStatus = value);
       },
       backgroundColor: Colors.grey.shade100,
-      selectedColor: const Color(0xFF0066CC).withOpacity(0.15),
+      selectedColor: const Color(0xFF0066CC).withValues(alpha: 0.15),
       checkmarkColor: const Color(0xFF0066CC),
       labelStyle: TextStyle(
         color: isSelected ? const Color(0xFF0066CC) : Colors.grey.shade700,
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      ),
-    );
-  }
-
-  Widget _buildDirectionChip(String label, String value, IconData icon) {
-    final isSelected = _parcelDirection == value;
-    return FilterChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [Icon(icon, size: 16), const SizedBox(width: 6), Text(label)],
-      ),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() => _parcelDirection = value);
-      },
-      backgroundColor: Colors.grey.shade100,
-      selectedColor: const Color(0xFF10B981).withOpacity(0.15),
-      checkmarkColor: const Color(0xFF10B981),
-      labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFF10B981) : Colors.grey.shade700,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      ),
-    );
-  }
-
-  Widget _buildParcelCard(Parcel parcel) {
-    final userOfficeId = AuthService.currentUser?.officeId;
-    final isSent = parcel.originOfficeId == userOfficeId;
-    final isReceived = parcel.destinationOfficeId == userOfficeId;
-
-    // Determine border color and badge
-    Color borderColor = Colors.grey.shade200;
-    Color badgeColor = Colors.grey;
-    IconData badgeIcon = Icons.swap_horiz_rounded;
-    String badgeLabel = '';
-
-    if (isSent && !isReceived) {
-      // Colis envoyé
-      borderColor = const Color(0xFF3B82F6); // Bleu
-      badgeColor = const Color(0xFF3B82F6);
-      badgeIcon = Icons.upload_rounded;
-      badgeLabel = 'Envoyé';
-    } else if (isReceived && !isSent) {
-      // Colis reçu
-      borderColor = const Color(0xFF10B981); // Vert
-      badgeColor = const Color(0xFF10B981);
-      badgeIcon = Icons.download_rounded;
-      badgeLabel = 'Reçu';
-    }
-
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ParcelDetailScreen(
-              parcel: parcel,
-              onStatusUpdated: widget.onRefresh,
-            ),
-          ),
-        );
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: borderColor, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: borderColor.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(parcel.status).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      Icons.inventory_2_rounded,
-                      color: _getStatusColor(parcel.status),
-                      size: 20,
-                    ),
-                  ),
-                  const Spacer(),
-                  // Badge direction
-                  if (badgeLabel.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: badgeColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: badgeColor.withOpacity(0.3)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(badgeIcon, size: 12, color: badgeColor),
-                          const SizedBox(width: 4),
-                          Text(
-                            badgeLabel,
-                            style: TextStyle(
-                              color: badgeColor,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(parcel.status).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  _getStatusLabel(parcel.status),
-                  style: TextStyle(
-                    color: _getStatusColor(parcel.status),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                parcel.receiverName,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1A1A1A),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(
-                    Icons.location_on_rounded,
-                    size: 14,
-                    color: Colors.grey.shade600,
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      parcel.destination,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(
-                    Icons.person_outline_rounded,
-                    size: 14,
-                    color: Colors.grey.shade500,
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      parcel.senderName,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -500,35 +279,5 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
-  }
-
-  String _getStatusLabel(ParcelStatus status) {
-    switch (status) {
-      case ParcelStatus.created:
-        return 'Créé';
-      case ParcelStatus.inTransit:
-        return 'En Transit';
-      case ParcelStatus.arrived:
-        return 'Arrivé';
-      case ParcelStatus.delivered:
-        return 'Livré';
-      case ParcelStatus.issue:
-        return 'Problème';
-    }
-  }
-
-  Color _getStatusColor(ParcelStatus status) {
-    switch (status) {
-      case ParcelStatus.created:
-        return const Color(0xFF9E9E9E);
-      case ParcelStatus.inTransit:
-        return const Color(0xFFFF9800);
-      case ParcelStatus.arrived:
-        return const Color(0xFF2196F3);
-      case ParcelStatus.delivered:
-        return const Color(0xFF4CAF50);
-      case ParcelStatus.issue:
-        return const Color(0xFFF44336);
-    }
   }
 }

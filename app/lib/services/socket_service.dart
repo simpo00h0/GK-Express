@@ -1,8 +1,9 @@
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:flutter/foundation.dart';
+import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'auth_service.dart';
 
 class SocketService {
-  static IO.Socket? _socket;
+  static io.Socket? _socket;
   static bool _isConnected = false;
 
   static bool get isConnected => _isConnected;
@@ -10,11 +11,11 @@ class SocketService {
   // Initialize and connect to Socket.IO server
   static void connect() {
     if (_socket != null && _isConnected) {
-      print('Socket already connected');
+      debugPrint('Socket already connected');
       return;
     }
 
-    _socket = IO.io('http://localhost:3000', <String, dynamic>{
+    _socket = io.io('http://localhost:3000', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });
@@ -22,9 +23,9 @@ class SocketService {
     _socket!.connect();
 
     _socket!.on('connect', (_) {
-      print('✅ Socket connected: ${_socket!.id}');
+      debugPrint('✅ Socket connected: ${_socket!.id}');
       _isConnected = true;
-      
+
       // Join office room when connected
       final user = AuthService.currentUser;
       if (user?.officeId != null) {
@@ -33,12 +34,12 @@ class SocketService {
     });
 
     _socket!.on('disconnect', (_) {
-      print('❌ Socket disconnected');
+      debugPrint('❌ Socket disconnected');
       _isConnected = false;
     });
 
     _socket!.on('connect_error', (error) {
-      print('Socket connection error: $error');
+      debugPrint('Socket connection error: $error');
       _isConnected = false;
     });
   }
@@ -46,26 +47,23 @@ class SocketService {
   // Join office room
   static void joinOfficeRoom(String officeId, String userId) {
     if (_socket == null || !_isConnected) {
-      print('Cannot join room: Socket not connected');
+      debugPrint('Cannot join room: Socket not connected');
       return;
     }
 
-    _socket!.emit('join_office', {
-      'officeId': officeId,
-      'userId': userId,
-    });
-    print('📍 Joined office room: $officeId');
+    _socket!.emit('join_office', {'officeId': officeId, 'userId': userId});
+    debugPrint('📍 Joined office room: $officeId');
   }
 
   // Listen for new parcel events
   static void onNewParcel(Function(Map<String, dynamic>) callback) {
     if (_socket == null) {
-      print('Cannot listen: Socket not initialized');
+      debugPrint('Cannot listen: Socket not initialized');
       return;
     }
 
     _socket!.on('new_parcel', (data) {
-      print('📦 New parcel received: $data');
+      debugPrint('📦 New parcel received: $data');
       callback(data as Map<String, dynamic>);
     });
   }
@@ -76,7 +74,7 @@ class SocketService {
       _socket!.disconnect();
       _socket = null;
       _isConnected = false;
-      print('Socket disconnected');
+      debugPrint('Socket disconnected');
     }
   }
 }

@@ -48,7 +48,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             content: const Text('Veuillez sélectionner un bureau'),
             backgroundColor: Colors.orange,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
         return;
@@ -77,12 +79,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 const Icon(Icons.error_rounded, color: Colors.white),
                 const SizedBox(width: 12),
-                Expanded(child: Text(result['message'] ?? 'Erreur d\'inscription')),
+                Expanded(
+                  child: Text(result['message'] ?? 'Erreur d\'inscription'),
+                ),
               ],
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -93,9 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        title: const Text('Créer un Compte'),
-      ),
+      appBar: AppBar(title: const Text('Créer un Compte')),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -108,7 +112,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 20,
                     offset: const Offset(0, 4),
                   ),
@@ -136,7 +140,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Role Selection
                     Container(
                       padding: const EdgeInsets.all(16),
@@ -157,33 +161,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: RadioListTile<String>(
-                                  title: const Text('Boss (PDG)'),
-                                  value: 'boss',
-                                  groupValue: _selectedRole,
-                                  onChanged: (value) => setState(() => _selectedRole = value!),
-                                  contentPadding: EdgeInsets.zero,
+                          RadioGroup<String>(
+                            groupValue: _selectedRole,
+                            onChanged: (value) =>
+                                setState(() => _selectedRole = value!),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: RadioListTile<String>(
+                                    title: const Text('Boss (PDG)'),
+                                    value: 'boss',
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
                                 ),
-                              ),
-                              Expanded(
-                                child: RadioListTile<String>(
-                                  title: const Text('Agent'),
-                                  value: 'agent',
-                                  groupValue: _selectedRole,
-                                  onChanged: (value) => setState(() => _selectedRole = value!),
-                                  contentPadding: EdgeInsets.zero,
+                                Expanded(
+                                  child: RadioListTile<String>(
+                                    title: const Text('Agent'),
+                                    value: 'agent',
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     TextFormField(
                       controller: _fullNameController,
                       decoration: const InputDecoration(
@@ -198,7 +203,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                     const SizedBox(height: 20),
-                    
+
                     TextFormField(
                       controller: _emailController,
                       decoration: const InputDecoration(
@@ -217,7 +222,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                     const SizedBox(height: 20),
-                    
+
                     TextFormField(
                       controller: _passwordController,
                       decoration: InputDecoration(
@@ -225,9 +230,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         prefixIcon: const Icon(Icons.lock_rounded),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                            _obscurePassword
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
                           ),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword,
+                          ),
                         ),
                       ),
                       obscureText: _obscurePassword,
@@ -241,11 +250,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         return null;
                       },
                     ),
-                    
+
                     if (_selectedRole == 'agent') ...[
                       const SizedBox(height: 20),
                       DropdownButtonFormField<Office>(
-                        value: _selectedOffice,
+                        initialValue: _selectedOffice,
                         decoration: const InputDecoration(
                           labelText: 'Bureau',
                           prefixIcon: Icon(Icons.business_rounded),
@@ -256,7 +265,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: Text('${office.flag} ${office.name}'),
                           );
                         }).toList(),
-                        onChanged: (value) => setState(() => _selectedOffice = value),
+                        onChanged: (value) =>
+                            setState(() => _selectedOffice = value),
                         validator: (value) {
                           if (_selectedRole == 'agent' && value == null) {
                             return 'Bureau requis pour les agents';
@@ -265,7 +275,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         },
                       ),
                     ],
-                    
+
                     const SizedBox(height: 32),
                     SizedBox(
                       height: 56,
@@ -281,7 +291,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 width: 24,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             : const Text(

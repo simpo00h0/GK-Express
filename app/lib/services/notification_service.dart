@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
@@ -20,13 +21,13 @@ class NotificationService {
     await _notifications.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        print('Notification clicked: ${response.payload}');
+        debugPrint('Notification clicked: ${response.payload}');
         // TODO: Navigate to parcel details
       },
     );
 
     _initialized = true;
-    print('✅ Notifications initialized');
+    debugPrint('✅ Notifications initialized');
   }
 
   // Show notification for new parcel
@@ -54,11 +55,13 @@ class NotificationService {
         payload: parcelId,
       );
 
-      print('📬 Notification shown for parcel: $parcelId');
+      debugPrint('📬 Notification shown for parcel: $parcelId');
     } catch (e) {
-      print('Error showing notification: $e');
+      debugPrint('Error showing notification: $e');
       // Fallback: just print to console
-      print('📦 NEW PARCEL: From $originOffice to $destination by $senderName');
+      debugPrint(
+        '📦 NEW PARCEL: From $originOffice to $destination by $senderName',
+      );
     }
   }
 

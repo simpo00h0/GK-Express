@@ -34,7 +34,7 @@ class _MainLayoutState extends State<MainLayout> {
     SocketService.connect();
 
     SocketService.onNewParcel((data) async {
-      print('📬 New parcel notification received: $data');
+      debugPrint('📬 New parcel notification received: $data');
 
       if (mounted) {
         InAppNotification.show(
@@ -55,7 +55,7 @@ class _MainLayoutState extends State<MainLayout> {
           destination: data['destination'] ?? '',
         );
       } catch (e) {
-        print('System notification failed: $e');
+        debugPrint('System notification failed: $e');
       }
 
       _loadParcels();
