@@ -32,6 +32,119 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   String _filterStatus = 'all';
 
+  String get _filterLabel {
+    switch (_filterStatus) {
+      case 'created':
+        return '🆕 Créés';
+      case 'inTransit':
+        return '🚚 En Transit';
+      case 'arrived':
+        return '📍 Arrivés';
+      case 'delivered':
+        return '✅ Livrés';
+      case 'issue':
+        return '⚠️ Problèmes';
+      default:
+        return '🔄 Tous les statuts';
+    }
+  }
+
+  Future<void> _showFilterSelector() async {
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.filter_list_rounded, color: Color(0xFF0066CC)),
+              const SizedBox(width: 12),
+              const Text('Filtrer par statut'),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 350,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildFilterOption(
+                    context,
+                    'all',
+                    '🔄 Tous les statuts',
+                    Icons.all_inclusive_rounded,
+                  ),
+                  const Divider(),
+                  _buildFilterOption(
+                    context,
+                    'created',
+                    '🆕 Créés',
+                    Icons.fiber_new_rounded,
+                  ),
+                  _buildFilterOption(
+                    context,
+                    'inTransit',
+                    '🚚 En Transit',
+                    Icons.local_shipping_rounded,
+                  ),
+                  _buildFilterOption(
+                    context,
+                    'arrived',
+                    '📍 Arrivés',
+                    Icons.location_on_rounded,
+                  ),
+                  _buildFilterOption(
+                    context,
+                    'delivered',
+                    '✅ Livrés',
+                    Icons.check_circle_rounded,
+                  ),
+                  _buildFilterOption(
+                    context,
+                    'issue',
+                    '⚠️ Problèmes',
+                    Icons.warning_rounded,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterOption(
+    BuildContext context,
+    String value,
+    String label,
+    IconData icon,
+  ) {
+    final isSelected = _filterStatus == value;
+    return ListTile(
+      leading: isSelected
+          ? const Icon(Icons.check_circle, color: Color(0xFF0066CC))
+          : Icon(icon, color: Colors.grey),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          color: isSelected ? const Color(0xFF0066CC) : null,
+        ),
+      ),
+      onTap: () {
+        setState(() => _filterStatus = value);
+        Navigator.of(context).pop();
+      },
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      hoverColor: const Color(0xFF0066CC).withValues(alpha: 0.1),
+    );
+  }
+
   List<Parcel> get _filteredParcels {
     var filtered = widget.parcels;
 
@@ -99,49 +212,74 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   onChanged: (value) => setState(() => _searchQuery = value),
                 ),
-                const SizedBox(height: 16),
-                // Status Filter
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildFilterChip(
-                        'Tous',
-                        'all',
-                        Icons.all_inclusive_rounded,
+                const SizedBox(height: 12),
+                // Status Filter Button
+                Row(
+                  children: [
+                    InkWell(
+                      onTap: _showFilterSelector,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _filterStatus != 'all'
+                              ? const Color(0xFF0066CC).withValues(alpha: 0.1)
+                              : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _filterStatus != 'all'
+                                ? const Color(0xFF0066CC)
+                                : Colors.grey.shade300,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.filter_list_rounded,
+                              size: 18,
+                              color: _filterStatus != 'all'
+                                  ? const Color(0xFF0066CC)
+                                  : Colors.grey.shade600,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _filterLabel,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: _filterStatus != 'all'
+                                    ? const Color(0xFF0066CC)
+                                    : Colors.grey.shade700,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Icon(
+                              Icons.arrow_drop_down_rounded,
+                              color: _filterStatus != 'all'
+                                  ? const Color(0xFF0066CC)
+                                  : Colors.grey.shade600,
+                            ),
+                          ],
+                        ),
                       ),
+                    ),
+                    if (_filterStatus != 'all') ...[
                       const SizedBox(width: 8),
-                      _buildFilterChip(
-                        'Créés',
-                        'created',
-                        Icons.fiber_new_rounded,
-                      ),
-                      const SizedBox(width: 8),
-                      _buildFilterChip(
-                        'En Transit',
-                        'inTransit',
-                        Icons.local_shipping_rounded,
-                      ),
-                      const SizedBox(width: 8),
-                      _buildFilterChip(
-                        'Arrivés',
-                        'arrived',
-                        Icons.location_on_rounded,
-                      ),
-                      const SizedBox(width: 8),
-                      _buildFilterChip(
-                        'Livrés',
-                        'delivered',
-                        Icons.check_circle_rounded,
-                      ),
-                      const SizedBox(width: 8),
-                      _buildFilterChip(
-                        'Problèmes',
-                        'issue',
-                        Icons.warning_rounded,
+                      TextButton.icon(
+                        onPressed: () => setState(() => _filterStatus = 'all'),
+                        icon: const Icon(Icons.clear, size: 16),
+                        label: const Text('Réinitialiser'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey.shade600,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          textStyle: const TextStyle(fontSize: 12),
+                        ),
                       ),
                     ],
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -196,27 +334,6 @@ class _HomeScreenState extends State<HomeScreen> {
               label: const Text('Nouveau Colis'),
             )
           : null,
-    );
-  }
-
-  Widget _buildFilterChip(String label, String value, IconData icon) {
-    final isSelected = _filterStatus == value;
-    return FilterChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [Icon(icon, size: 16), const SizedBox(width: 6), Text(label)],
-      ),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() => _filterStatus = value);
-      },
-      backgroundColor: Colors.grey.shade100,
-      selectedColor: const Color(0xFF0066CC).withValues(alpha: 0.15),
-      checkmarkColor: const Color(0xFF0066CC),
-      labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFF0066CC) : Colors.grey.shade700,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      ),
     );
   }
 
