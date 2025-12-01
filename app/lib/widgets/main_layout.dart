@@ -97,6 +97,9 @@ class _MainLayoutState extends State<MainLayout> {
         .toList();
   }
 
+  // Le Boss ne peut pas créer de colis, il supervise uniquement
+  bool get _isBoss => AuthService.currentUser?.role == 'boss';
+
   @override
   Widget build(BuildContext context) {
     // Index 0: Dashboard
@@ -109,19 +112,20 @@ class _MainLayoutState extends State<MainLayout> {
     final List<Widget> screens = [
       DashboardScreen(parcels: _parcels, isLoading: _isLoading),
       HomeScreen(
-        parcels: _getSentParcels(),
+        parcels: _isBoss ? _parcels : _getSentParcels(),
         isLoading: _isLoading,
         onParcelAdded: _addParcel,
         onRefresh: _loadParcels,
-        title: 'Colis Envoyés',
+        title: _isBoss ? 'Tous les Colis Envoyés' : 'Colis Envoyés',
         emptyMessage: 'Aucun colis envoyé',
+        showCreateButton: !_isBoss, // Boss ne peut pas créer
       ),
       HomeScreen(
-        parcels: _getReceivedParcels(),
+        parcels: _isBoss ? _parcels : _getReceivedParcels(),
         isLoading: _isLoading,
         onParcelAdded: _addParcel,
         onRefresh: _loadParcels,
-        title: 'Colis Reçus',
+        title: _isBoss ? 'Tous les Colis Reçus' : 'Colis Reçus',
         emptyMessage: 'Aucun colis reçu',
         showCreateButton: false,
       ),
@@ -132,6 +136,7 @@ class _MainLayoutState extends State<MainLayout> {
         onRefresh: _loadParcels,
         title: 'Tous les Colis',
         emptyMessage: 'Aucun colis',
+        showCreateButton: !_isBoss, // Boss ne peut pas créer
       ),
       const Center(
         child: Text(
