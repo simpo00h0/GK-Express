@@ -116,32 +116,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   onChanged: (value) => setState(() => _searchQuery = value),
                 ),
                 const SizedBox(height: 16),
-                // Direction Filter
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildDirectionChip(
-                        'Tous',
-                        'all',
-                        Icons.all_inclusive_rounded,
-                      ),
-                      const SizedBox(width: 8),
-                      _buildDirectionChip(
-                        'Envoyés',
-                        'sent',
-                        Icons.upload_rounded,
-                      ),
-                      const SizedBox(width: 8),
-                      _buildDirectionChip(
-                        'Reçus',
-                        'received',
-                        Icons.download_rounded,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
                 // Status Filter
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
