@@ -29,22 +29,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String? _selectedOfficeId; // null = tous les bureaux
   String? _selectedOfficeName; // Nom du bureau sélectionné pour l'affichage
 
+  // Cache des bureaux (static pour persister entre les rebuilds)
+  static List<Office>? _cachedOffices;
+
   bool get _isBoss => AuthService.currentUser?.role == 'boss';
 
   Future<void> _showOfficeSelector() async {
-    // Charger les bureaux seulement quand on ouvre le modal
-    List<Office> offices = [];
-    bool isLoading = true;
+    // Utiliser le cache si disponible
+    List<Office> offices = _cachedOffices ?? [];
+    bool isLoading = _cachedOffices == null;
 
     await showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            // Charger les bureaux au premier build
-            if (isLoading) {
+            // Charger les bureaux seulement si pas en cache
+            if (isLoading && _cachedOffices == null) {
               ApiService.fetchOffices()
                   .then((data) {
+                    _cachedOffices = data; // Mettre en cache
                     setDialogState(() {
                       offices = data;
                       isLoading = false;
