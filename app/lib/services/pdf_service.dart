@@ -215,35 +215,6 @@ class PdfService {
 
       // Ouvrir le fichier avec l'application par défaut
       await Process.run('cmd', ['/c', 'start', '', filePath]);
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('PDF ouvert avec succès!'),
-                      Text(
-                        filePath,
-                        style: const TextStyle(fontSize: 10),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
     } catch (e) {
       if (context.mounted) {
         Navigator.of(context).pop();
