@@ -123,6 +123,7 @@ class _MainLayoutState extends State<MainLayout> {
         onRefresh: _loadParcels,
         title: 'Colis Reçus',
         emptyMessage: 'Aucun colis reçu',
+        showCreateButton: false,
       ),
       HomeScreen(
         parcels: _parcels,

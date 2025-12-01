@@ -12,6 +12,7 @@ class HomeScreen extends StatefulWidget {
   final Function() onRefresh;
   final String title;
   final String emptyMessage;
+  final bool showCreateButton;
 
   const HomeScreen({
     super.key,
@@ -21,6 +22,7 @@ class HomeScreen extends StatefulWidget {
     required this.onRefresh,
     this.title = 'Gestion des Colis',
     this.emptyMessage = 'Aucun colis pour le moment',
+    this.showCreateButton = true,
   });
 
   @override
@@ -196,19 +198,22 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  CreateParcelScreen(onParcelCreated: widget.onParcelAdded),
-            ),
-          );
-        },
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Nouveau Colis'),
-      ),
+      floatingActionButton: widget.showCreateButton
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CreateParcelScreen(
+                      onParcelCreated: widget.onParcelAdded,
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Nouveau Colis'),
+            )
+          : null,
     );
   }
 
