@@ -47,11 +47,6 @@ class PdfService {
       // Obtenir la liste des imprimantes disponibles
       final printers = await Printing.listPrinters();
 
-      debugPrint('Imprimantes trouvées: ${printers.length}');
-      for (var p in printers) {
-        debugPrint('  - ${p.name} (default: ${p.isDefault})');
-      }
-
       if (printers.isEmpty) {
         // Aucune imprimante trouvée - utiliser l'aperçu système
         if (context.mounted) {
@@ -140,7 +135,6 @@ class PdfService {
           ),
         );
       }
-      debugPrint('Erreur PDF: $e');
     }
   }
 
@@ -188,6 +182,89 @@ class PdfService {
       return file.path;
     } catch (e) {
       return null;
+    }
+  }
+
+  // Ouvrir le PDF avec le visualiseur par défaut de Windows
+  static Future<void> generateAndOpenPdf(
+    Parcel parcel,
+    BuildContext context,
+  ) async {
+    try {
+      // Afficher un indicateur de chargement
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: Color(0xFF9C27B0)),
+                  SizedBox(height: 16),
+                  Text('Génération du PDF...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final pdf = await _generateParcelPdf(parcel);
+
+      // Sauvegarder le fichier
+      final directory = await getApplicationDocumentsDirectory();
+      final fileName =
+          'GK_Express_${parcel.id.substring(0, 8).toUpperCase()}.pdf';
+      final filePath = '${directory.path}\\$fileName';
+      final file = File(filePath);
+      await file.writeAsBytes(pdf);
+
+      // Fermer l'indicateur de chargement
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Ouvrir le fichier avec l'application par défaut
+      await Process.run('cmd', ['/c', 'start', '', filePath]);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('PDF ouvert avec succès!'),
+                      Text(
+                        filePath,
+                        style: const TextStyle(fontSize: 10),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 

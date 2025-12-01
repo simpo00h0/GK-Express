@@ -144,12 +144,13 @@ class ParcelDetailScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ElevatedButton.icon(
-                        onPressed: () => PdfService.generateAndPrintParcelPdf(
-                          parcel,
-                          context,
+                        onPressed: () =>
+                            PdfService.generateAndOpenPdf(parcel, context),
+                        icon: const Icon(
+                          Icons.picture_as_pdf_rounded,
+                          size: 18,
                         ),
-                        icon: const Icon(Icons.print_rounded, size: 18),
-                        label: const Text('Imprimer'),
+                        label: const Text('Ouvrir PDF'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF9C27B0),
                           foregroundColor: Colors.white,
@@ -161,10 +162,12 @@ class ParcelDetailScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       OutlinedButton.icon(
-                        onPressed: () =>
-                            PdfService.generateAndShareParcelPdf(parcel),
-                        icon: const Icon(Icons.share_rounded, size: 18),
-                        label: const Text('Partager PDF'),
+                        onPressed: () => PdfService.generateAndPrintParcelPdf(
+                          parcel,
+                          context,
+                        ),
+                        icon: const Icon(Icons.print_rounded, size: 18),
+                        label: const Text('Imprimer'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF9C27B0),
                           side: const BorderSide(color: Color(0xFF9C27B0)),
