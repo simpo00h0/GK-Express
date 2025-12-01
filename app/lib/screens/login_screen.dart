@@ -76,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo with Animation
+                // GK Express Logo
                 TweenAnimationBuilder(
                   duration: const Duration(milliseconds: 800),
                   tween: Tween<double>(begin: 0, end: 1),
@@ -84,35 +84,65 @@ class _LoginScreenState extends State<LoginScreen> {
                   builder: (context, double value, child) {
                     return Transform.scale(scale: value, child: child);
                   },
-                  child: Container(
-                    padding: const EdgeInsets.all(28),
-                    decoration: BoxDecoration(
-                      gradient: AppTheme.primaryGradient,
-                      borderRadius: AppTheme.borderRadiusLarge,
-                      boxShadow: AppTheme.strongGlowShadow(AppTheme.primary),
-                    ),
-                    child: const Icon(
-                      Icons.local_shipping_rounded,
-                      size: 72,
-                      color: Colors.white,
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Speedometer circle with G and K
+                      SizedBox(
+                        width: 80,
+                        height: 80,
+                        child: CustomPaint(painter: _GKLogoPainter()),
+                      ),
+                      const SizedBox(width: 12),
+                      // EXpress text with DELIVERY below
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'EX',
+                                style: TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFFE53935),
+                                  letterSpacing: -1,
+                                ),
+                              ),
+                              Text(
+                                'press',
+                                style: TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFF1A1A1A),
+                                  letterSpacing: -1,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            'DELIVERY',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFFE53935),
+                              letterSpacing: 4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 40),
-                const Text(
-                  'GK Express',
-                  style: TextStyle(
-                    fontSize: 42,
-                    fontWeight: FontWeight.w900,
-                    color: AppTheme.textPrimary,
-                    letterSpacing: -1,
-                  ),
-                ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
+                // Slogan
                 Text(
-                  'Gestion de Transit International',
+                  'Simple, rapide et efficace!',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
                     color: AppTheme.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
@@ -255,4 +285,89 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+}
+
+// Custom painter for GK Logo
+class _GKLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 4;
+
+    // Black circle background
+    final bgPaint = Paint()
+      ..color = const Color(0xFF1A1A1A)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, radius, bgPaint);
+
+    // Speedometer arc (red)
+    final arcPaint = Paint()
+      ..color = const Color(0xFFE53935)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
+
+    final arcRect = Rect.fromCircle(center: center, radius: radius - 8);
+    canvas.drawArc(arcRect, math.pi * 0.8, math.pi * 1.4, false, arcPaint);
+
+    // Speed indicator lines
+    final linePaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    for (int i = 0; i < 5; i++) {
+      final angle = math.pi * 0.8 + (math.pi * 1.4 / 4) * i;
+      final start = Offset(
+        center.dx + (radius - 12) * math.cos(angle),
+        center.dy + (radius - 12) * math.sin(angle),
+      );
+      final end = Offset(
+        center.dx + (radius - 18) * math.cos(angle),
+        center.dy + (radius - 18) * math.sin(angle),
+      );
+      canvas.drawLine(start, end, linePaint);
+    }
+
+    // G letter (red, left side)
+    final gPainter = TextPainter(
+      text: const TextSpan(
+        text: 'G',
+        style: TextStyle(
+          color: Color(0xFFE53935),
+          fontSize: 22,
+          fontWeight: FontWeight.w900,
+          fontFamily: 'Arial',
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    gPainter.layout();
+    gPainter.paint(
+      canvas,
+      Offset(center.dx - gPainter.width - 2, center.dy - gPainter.height / 2),
+    );
+
+    // K letter (white, right side)
+    final kPainter = TextPainter(
+      text: const TextSpan(
+        text: 'K',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 22,
+          fontWeight: FontWeight.w900,
+          fontFamily: 'Arial',
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    kPainter.layout();
+    kPainter.paint(
+      canvas,
+      Offset(center.dx + 2, center.dy - kPainter.height / 2),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
