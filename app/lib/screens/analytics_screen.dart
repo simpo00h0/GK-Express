@@ -1120,47 +1120,73 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
           ),
         ],
       ),
-      height: 200,
+      height: 250,
       child: entries.isEmpty
           ? const Center(child: Text('Aucune donnée disponible'))
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: entries.take(14).map((e) {
-                final height = (e.value / maxCount) * 140;
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          '${e.value}',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppTheme.textSecondary,
-                          ),
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final availableHeight =
+                    constraints.maxHeight - 60; // Espace pour textes
+                final barEntries = entries.take(14).toList();
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: barEntries.asMap().entries.map((entry) {
+                    final e = entry.value;
+                    final barHeight = maxCount > 0
+                        ? (e.value / maxCount) * availableHeight * 0.8
+                        : 0.0;
+
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '${e.value}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              height: barHeight.clamp(
+                                4.0,
+                                availableHeight * 0.8,
+                              ),
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    AppTheme.primary,
+                                    AppTheme.primary.withValues(alpha: 0.7),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              e.key,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppTheme.textSecondary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Container(
-                          height: height,
-                          decoration: BoxDecoration(
-                            color: AppTheme.primary,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          e.key,
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  }).toList(),
                 );
-              }).toList(),
+              },
             ),
     );
   }
