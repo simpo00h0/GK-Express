@@ -1,0 +1,28 @@
+# Backend
+backend/node_modules/
+backend/.env
+backend/package-lock.json
+
+# Flutter
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.packages
+app/build/
+app/pubspec.lock
+app/.metadata
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
