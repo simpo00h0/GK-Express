@@ -4,6 +4,7 @@ import '../screens/home_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/users_screen.dart';
+import '../screens/analytics_screen.dart';
 import '../models/parcel.dart';
 import '../models/office.dart';
 import '../models/user.dart';
@@ -367,6 +368,13 @@ class _MainLayoutState extends State<MainLayout> {
                 style: TextStyle(fontSize: 18, color: Colors.grey),
               ),
             ),
+      // Écran des analyses (Agent et Boss)
+      AnalyticsScreen(
+        parcels: _parcels,
+        offices: _cachedOffices ?? [],
+        isLoading: _isLoading,
+        onRefresh: _loadParcels,
+      ),
       const SettingsScreen(),
     ];
 
