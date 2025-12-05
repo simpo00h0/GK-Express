@@ -166,11 +166,17 @@ class ApiService {
         },
       );
 
+      debugPrint('History API Response Status: ${response.statusCode}');
+      debugPrint('History API Response Body: ${response.body}');
+
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
+        debugPrint('History entries found: ${data.length}');
         return data.map((json) => ParcelStatusHistory.fromJson(json)).toList();
       } else {
-        throw Exception('Failed to load parcel status history');
+        final errorBody = json.decode(response.body);
+        debugPrint('Error fetching history: ${errorBody['message'] ?? response.statusCode}');
+        throw Exception('Failed to load parcel status history: ${errorBody['message'] ?? response.statusCode}');
       }
     } catch (e) {
       debugPrint('Error fetching parcel status history: $e');

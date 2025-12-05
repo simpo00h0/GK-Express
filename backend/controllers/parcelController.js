@@ -273,6 +273,7 @@ exports.updateParcelStatus = async (req, res) => {
 exports.getParcelStatusHistory = async (req, res) => {
     try {
         const { id } = req.params;
+        console.log(`📜 Fetching history for parcel: ${id}`);
 
         // Get history with user and office information
         const { data: history, error } = await supabase
@@ -293,7 +294,17 @@ exports.getParcelStatusHistory = async (req, res) => {
             .eq('parcel_id', id)
             .order('changed_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.error('❌ Error fetching history:', error);
+            // If table doesn't exist, return empty array instead of error
+            if (error.code === '42P01' || error.message?.includes('does not exist')) {
+                console.warn('⚠️ History table does not exist yet. Please run create_status_history.sql');
+                return res.json([]);
+            }
+            throw error;
+        }
+
+        console.log(`✅ Found ${history?.length || 0} history entries`);
 
         // Format response
         const formattedHistory = (history || []).map(entry => ({
@@ -313,7 +324,7 @@ exports.getParcelStatusHistory = async (req, res) => {
 
         res.json(formattedHistory);
     } catch (error) {
-        console.error('Error fetching parcel status history:', error);
+        console.error('❌ Error fetching parcel status history:', error);
         res.status(500).json({ message: 'Error fetching parcel status history', error: error.message });
     }
 };

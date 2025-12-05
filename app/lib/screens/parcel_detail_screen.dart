@@ -25,10 +25,12 @@ class ParcelDetailScreen extends StatefulWidget {
 class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
   List<ParcelStatusHistory> _history = [];
   bool _isLoadingHistory = true;
+  Parcel? _currentParcel; // Parcel actuel (peut être mis à jour)
 
   @override
   void initState() {
     super.initState();
+    _currentParcel = widget.parcel;
     _loadHistory();
   }
 
@@ -36,12 +38,37 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
     setState(() => _isLoadingHistory = true);
     try {
       final history = await ApiService.fetchParcelStatusHistory(widget.parcel.id);
-      setState(() {
-        _history = history;
-        _isLoadingHistory = false;
-      });
+      if (mounted) {
+        setState(() {
+          _history = history;
+          _isLoadingHistory = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoadingHistory = false);
+      debugPrint('Error loading history: $e');
+      if (mounted) {
+        setState(() => _isLoadingHistory = false);
+      }
+    }
+  }
+
+  Future<void> _reloadParcel() async {
+    try {
+      // Recharger la liste des colis pour obtenir le colis mis à jour
+      final parcels = await ApiService.fetchParcels();
+      final updatedParcel = parcels.firstWhere(
+        (p) => p.id == widget.parcel.id,
+        orElse: () => widget.parcel,
+      );
+      if (mounted) {
+        setState(() {
+          _currentParcel = updatedParcel;
+        });
+        // Recharger l'historique aussi
+        await _loadHistory();
+      }
+    } catch (e) {
+      debugPrint('Error reloading parcel: $e');
     }
   }
 
@@ -49,28 +76,30 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
   void didUpdateWidget(ParcelDetailScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.parcel.id != widget.parcel.id) {
+      _currentParcel = widget.parcel;
       _loadHistory();
     }
   }
 
   // Générer les données du QR code avec informations lisibles
   String _generateQrData() {
-    final shortId = widget.parcel.id.substring(0, 8).toUpperCase();
-    final statusText = _getStatusText(widget.parcel.status);
-    final paymentStatus = widget.parcel.isPaid ? 'Payé ✅' : 'Non payé ❌';
-    final date = DateFormat('dd/MM/yyyy HH:mm').format(widget.parcel.createdAt);
+    final parcel = _currentParcel ?? widget.parcel;
+    final shortId = parcel.id.substring(0, 8).toUpperCase();
+    final statusText = _getStatusText(parcel.status);
+    final paymentStatus = parcel.isPaid ? 'Payé ✅' : 'Non payé ❌';
+    final date = DateFormat('dd/MM/yyyy HH:mm').format(parcel.createdAt);
 
     return '''📦 GK EXPRESS - Colis #$shortId
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📤 Expediteur: ${widget.parcel.senderName}
-   Tel: ${widget.parcel.senderPhone}
+📤 Expediteur: ${parcel.senderName}
+   Tel: ${parcel.senderPhone}
 
-📥 Destinataire: ${widget.parcel.receiverName}
-   Tel: ${widget.parcel.receiverPhone}
+📥 Destinataire: ${parcel.receiverName}
+   Tel: ${parcel.receiverPhone}
 
-📍 Destination: ${widget.parcel.destination}
+📍 Destination: ${parcel.destination}
 📊 Statut: $statusText
-💰 Prix: ${widget.parcel.price.toStringAsFixed(0)} CFA ($paymentStatus)
+💰 Prix: ${parcel.price.toStringAsFixed(0)} CFA ($paymentStatus)
 📅 Cree le: $date
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔗 Suivi en ligne:
@@ -110,10 +139,12 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => UpdateStatusScreen(
-                      parcel: widget.parcel,
-                      onStatusUpdated: () {
+                      parcel: _currentParcel ?? widget.parcel,
+                      onStatusUpdated: () async {
+                        // Recharger le colis et l'historique
+                        await _reloadParcel();
+                        // Notifier le parent pour rafraîchir la liste
                         widget.onStatusUpdated();
-                        _loadHistory(); // Reload history after status update
                       },
                     ),
                   ),
@@ -168,7 +199,7 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'ID: ${widget.parcel.id.substring(0, 8).toUpperCase()}',
+                    'ID: ${(_currentParcel ?? widget.parcel).id.substring(0, 8).toUpperCase()}',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -183,7 +214,7 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
                     children: [
                       ElevatedButton.icon(
                         onPressed: () =>
-                            PdfService.generateAndOpenPdf(widget.parcel, context),
+                            PdfService.generateAndOpenPdf(_currentParcel ?? widget.parcel, context),
                         icon: const Icon(
                           Icons.picture_as_pdf_rounded,
                           size: 18,
@@ -201,7 +232,7 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
                       const SizedBox(width: 12),
                       OutlinedButton.icon(
                         onPressed: () => PdfService.generateAndPrintParcelPdf(
-                          widget.parcel,
+                          _currentParcel ?? widget.parcel,
                           context,
                         ),
                         icon: const Icon(Icons.print_rounded, size: 18),
@@ -228,15 +259,15 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    _getStatusColor(widget.parcel.status),
-                    _getStatusColor(widget.parcel.status).withValues(alpha: 0.8),
+                    _getStatusColor((_currentParcel ?? widget.parcel).status),
+                    _getStatusColor((_currentParcel ?? widget.parcel).status).withValues(alpha: 0.8),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
                     color: _getStatusColor(
-                      widget.parcel.status,
+                      (_currentParcel ?? widget.parcel).status,
                     ).withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
@@ -252,7 +283,7 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      _getStatusIcon(widget.parcel.status),
+                      _getStatusIcon((_currentParcel ?? widget.parcel).status),
                       color: Colors.white,
                       size: 28,
                     ),
@@ -271,7 +302,7 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _getStatusLabel(widget.parcel.status),
+                        _getStatusLabel((_currentParcel ?? widget.parcel).status),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 24,
@@ -291,8 +322,8 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
                 Expanded(
                   child: _buildInfoCard(
                     'Expéditeur',
-                    widget.parcel.senderName,
-                    widget.parcel.senderPhone,
+                    (_currentParcel ?? widget.parcel).senderName,
+                    (_currentParcel ?? widget.parcel).senderPhone,
                     Icons.person_outline_rounded,
                     const Color(0xFF667EEA),
                   ),
@@ -301,8 +332,8 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
                 Expanded(
                   child: _buildInfoCard(
                     'Destinataire',
-                    widget.parcel.receiverName,
-                    widget.parcel.receiverPhone,
+                    (_currentParcel ?? widget.parcel).receiverName,
+                    (_currentParcel ?? widget.parcel).receiverPhone,
                     Icons.person_rounded,
                     const Color(0xFFF093FB),
                   ),
@@ -312,8 +343,8 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
             const SizedBox(height: 16),
             _buildInfoCard(
               'Destination',
-              widget.parcel.destination,
-              DateFormat('dd/MM/yyyy HH:mm').format(widget.parcel.createdAt),
+              (_currentParcel ?? widget.parcel).destination,
+              DateFormat('dd/MM/yyyy HH:mm').format((_currentParcel ?? widget.parcel).createdAt),
               Icons.location_on_rounded,
               const Color(0xFF4FACFE),
             ),
