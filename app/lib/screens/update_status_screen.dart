@@ -19,11 +19,18 @@ class UpdateStatusScreen extends StatefulWidget {
 class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
   late ParcelStatus _selectedStatus;
   bool _isLoading = false;
+  final TextEditingController _notesController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _selectedStatus = widget.parcel.status;
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    super.dispose();
   }
 
   Future<void> _updateStatus() async {
@@ -32,6 +39,9 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
     final success = await ApiService.updateParcelStatus(
       widget.parcel.id,
       _selectedStatus.name,
+      notes: _notesController.text.trim().isNotEmpty
+          ? _notesController.text.trim()
+          : null,
     );
 
     setState(() => _isLoading = false);
@@ -188,6 +198,24 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
                 child: _buildStatusOption(status),
               );
             }),
+
+            const SizedBox(height: 24),
+
+            // Notes Field
+            TextField(
+              controller: _notesController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'Notes (optionnel)',
+                hintText: 'Ajouter des notes sur ce changement de statut...',
+                prefixIcon: const Icon(Icons.note_rounded),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+              ),
+            ),
 
             const SizedBox(height: 32),
 

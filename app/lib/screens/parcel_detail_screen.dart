@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
 import '../models/parcel.dart';
+import '../models/parcel_status_history.dart';
+import '../services/api_service.dart';
 import '../services/pdf_service.dart';
+import '../widgets/status_timeline.dart';
 import 'update_status_screen.dart';
 
-class ParcelDetailScreen extends StatelessWidget {
+class ParcelDetailScreen extends StatefulWidget {
   final Parcel parcel;
   final Function() onStatusUpdated;
 
@@ -15,24 +18,59 @@ class ParcelDetailScreen extends StatelessWidget {
     required this.onStatusUpdated,
   });
 
+  @override
+  State<ParcelDetailScreen> createState() => _ParcelDetailScreenState();
+}
+
+class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
+  List<ParcelStatusHistory> _history = [];
+  bool _isLoadingHistory = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    setState(() => _isLoadingHistory = true);
+    try {
+      final history = await ApiService.fetchParcelStatusHistory(widget.parcel.id);
+      setState(() {
+        _history = history;
+        _isLoadingHistory = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingHistory = false);
+    }
+  }
+
+  @override
+  void didUpdateWidget(ParcelDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.parcel.id != widget.parcel.id) {
+      _loadHistory();
+    }
+  }
+
   // Générer les données du QR code avec informations lisibles
   String _generateQrData() {
-    final shortId = parcel.id.substring(0, 8).toUpperCase();
-    final statusText = _getStatusText(parcel.status);
-    final paymentStatus = parcel.isPaid ? 'Payé ✅' : 'Non payé ❌';
-    final date = DateFormat('dd/MM/yyyy HH:mm').format(parcel.createdAt);
+    final shortId = widget.parcel.id.substring(0, 8).toUpperCase();
+    final statusText = _getStatusText(widget.parcel.status);
+    final paymentStatus = widget.parcel.isPaid ? 'Payé ✅' : 'Non payé ❌';
+    final date = DateFormat('dd/MM/yyyy HH:mm').format(widget.parcel.createdAt);
 
     return '''📦 GK EXPRESS - Colis #$shortId
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📤 Expediteur: ${parcel.senderName}
-   Tel: ${parcel.senderPhone}
+📤 Expediteur: ${widget.parcel.senderName}
+   Tel: ${widget.parcel.senderPhone}
 
-📥 Destinataire: ${parcel.receiverName}
-   Tel: ${parcel.receiverPhone}
+📥 Destinataire: ${widget.parcel.receiverName}
+   Tel: ${widget.parcel.receiverPhone}
 
-📍 Destination: ${parcel.destination}
+📍 Destination: ${widget.parcel.destination}
 📊 Statut: $statusText
-💰 Prix: ${parcel.price.toStringAsFixed(0)} CFA ($paymentStatus)
+💰 Prix: ${widget.parcel.price.toStringAsFixed(0)} CFA ($paymentStatus)
 📅 Cree le: $date
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔗 Suivi en ligne:
@@ -67,15 +105,15 @@ class ParcelDetailScreen extends StatelessWidget {
           Container(
             margin: const EdgeInsets.only(right: 12),
             child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => UpdateStatusScreen(
-                      parcel: parcel,
+                      parcel: widget.parcel,
                       onStatusUpdated: () {
-                        onStatusUpdated();
-                        Navigator.pop(context);
+                        widget.onStatusUpdated();
+                        _loadHistory(); // Reload history after status update
                       },
                     ),
                   ),
@@ -130,7 +168,7 @@ class ParcelDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'ID: ${parcel.id.substring(0, 8).toUpperCase()}',
+                    'ID: ${widget.parcel.id.substring(0, 8).toUpperCase()}',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -145,7 +183,7 @@ class ParcelDetailScreen extends StatelessWidget {
                     children: [
                       ElevatedButton.icon(
                         onPressed: () =>
-                            PdfService.generateAndOpenPdf(parcel, context),
+                            PdfService.generateAndOpenPdf(widget.parcel, context),
                         icon: const Icon(
                           Icons.picture_as_pdf_rounded,
                           size: 18,
@@ -163,7 +201,7 @@ class ParcelDetailScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       OutlinedButton.icon(
                         onPressed: () => PdfService.generateAndPrintParcelPdf(
-                          parcel,
+                          widget.parcel,
                           context,
                         ),
                         icon: const Icon(Icons.print_rounded, size: 18),
@@ -190,15 +228,15 @@ class ParcelDetailScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    _getStatusColor(parcel.status),
-                    _getStatusColor(parcel.status).withValues(alpha: 0.8),
+                    _getStatusColor(widget.parcel.status),
+                    _getStatusColor(widget.parcel.status).withValues(alpha: 0.8),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
                     color: _getStatusColor(
-                      parcel.status,
+                      widget.parcel.status,
                     ).withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
@@ -214,7 +252,7 @@ class ParcelDetailScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      _getStatusIcon(parcel.status),
+                      _getStatusIcon(widget.parcel.status),
                       color: Colors.white,
                       size: 28,
                     ),
@@ -233,7 +271,7 @@ class ParcelDetailScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _getStatusLabel(parcel.status),
+                        _getStatusLabel(widget.parcel.status),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 24,
@@ -253,8 +291,8 @@ class ParcelDetailScreen extends StatelessWidget {
                 Expanded(
                   child: _buildInfoCard(
                     'Expéditeur',
-                    parcel.senderName,
-                    parcel.senderPhone,
+                    widget.parcel.senderName,
+                    widget.parcel.senderPhone,
                     Icons.person_outline_rounded,
                     const Color(0xFF667EEA),
                   ),
@@ -263,8 +301,8 @@ class ParcelDetailScreen extends StatelessWidget {
                 Expanded(
                   child: _buildInfoCard(
                     'Destinataire',
-                    parcel.receiverName,
-                    parcel.receiverPhone,
+                    widget.parcel.receiverName,
+                    widget.parcel.receiverPhone,
                     Icons.person_rounded,
                     const Color(0xFFF093FB),
                   ),
@@ -274,10 +312,17 @@ class ParcelDetailScreen extends StatelessWidget {
             const SizedBox(height: 16),
             _buildInfoCard(
               'Destination',
-              parcel.destination,
-              DateFormat('dd/MM/yyyy HH:mm').format(parcel.createdAt),
+              widget.parcel.destination,
+              DateFormat('dd/MM/yyyy HH:mm').format(widget.parcel.createdAt),
               Icons.location_on_rounded,
               const Color(0xFF4FACFE),
+            ),
+            const SizedBox(height: 24),
+
+            // Status History Timeline
+            StatusTimeline(
+              history: _history,
+              isLoading: _isLoadingHistory,
             ),
           ],
         ),

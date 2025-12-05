@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/parcel.dart';
 import '../models/office.dart';
 import '../models/user.dart';
+import '../models/parcel_status_history.dart';
 import 'auth_service.dart';
 
 class ApiService {
@@ -124,21 +125,56 @@ class ApiService {
   }
 
   // Update parcel status
-  static Future<bool> updateParcelStatus(String id, String status) async {
+  static Future<bool> updateParcelStatus(String id, String status, {String? notes}) async {
     try {
+      // Normalize status to lowercase (backend expects lowercase)
+      final normalizedStatus = status.toLowerCase();
+      
       final response = await http.patch(
         Uri.parse('$baseUrl/parcels/$id/status'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${AuthService.token}',
         },
-        body: json.encode({'status': status}),
+        body: json.encode({
+          'status': normalizedStatus,
+          if (notes != null && notes.isNotEmpty) 'notes': notes,
+        }),
       );
 
-      return response.statusCode == 200;
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        final errorBody = json.decode(response.body);
+        debugPrint('Error updating parcel status: ${errorBody['message'] ?? response.statusCode}');
+        return false;
+      }
     } catch (e) {
       debugPrint('Error updating parcel status: $e');
       return false;
+    }
+  }
+
+  // Fetch parcel status history
+  static Future<List<ParcelStatusHistory>> fetchParcelStatusHistory(String parcelId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/parcels/$parcelId/history'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${AuthService.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => ParcelStatusHistory.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load parcel status history');
+      }
+    } catch (e) {
+      debugPrint('Error fetching parcel status history: $e');
+      return [];
     }
   }
 }

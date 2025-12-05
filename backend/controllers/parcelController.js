@@ -122,6 +122,28 @@ exports.createParcel = async (req, res) => {
             paidAtOfficeId: data.paid_at_office_id,
         });
 
+        // Log initial status creation in history
+        const initialHistoryEntry = {
+            id: uuidv4(),
+            parcel_id: data.id,
+            old_status: null,
+            new_status: 'created',
+            changed_by_user_id: req.userId,
+            office_id: originOfficeId,
+            notes: 'Colis créé',
+            changed_at: new Date().toISOString(),
+        };
+
+        const { error: historyError } = await supabase
+            .from('parcel_status_history')
+            .insert([initialHistoryEntry]);
+
+        if (historyError) {
+            console.error('Error logging initial status history:', historyError);
+        } else {
+            console.log('✅ Initial status history logged for parcel:', data.id);
+        }
+
         // Emit Socket.IO event to destination office
         const io = req.app.get('io');
         if (io && destinationOfficeId) {
@@ -143,19 +165,27 @@ exports.createParcel = async (req, res) => {
 exports.updateParcelStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const { status } = req.body;
+        let { status, notes } = req.body;
 
         if (!status) {
             return res.status(400).json({ message: 'Status is required' });
         }
 
+        // Normalize status to lowercase
+        status = status.toLowerCase();
+
         // Get current parcel data
-        const { data: currentParcel } = await supabase
+        const { data: currentParcel, error: fetchError } = await supabase
             .from('parcels')
             .select('*')
             .eq('id', id)
             .single();
 
+        if (fetchError || !currentParcel) {
+            return res.status(404).json({ message: 'Parcel not found' });
+        }
+
+        const oldStatus = currentParcel.status;
         const updateData = {
             status: status,
         };
@@ -166,6 +196,7 @@ exports.updateParcelStatus = async (req, res) => {
             updateData.paid_at_office_id = currentParcel.destination_office_id;
         }
 
+        // Update parcel status
         const { data, error } = await supabase
             .from('parcels')
             .update(updateData)
@@ -174,6 +205,48 @@ exports.updateParcelStatus = async (req, res) => {
             .single();
 
         if (error) throw error;
+
+        // Get user's office for history
+        let userOfficeId = null;
+        if (req.userId) {
+            const { data: userData } = await supabase
+                .from('users')
+                .select('office_id')
+                .eq('id', req.userId)
+                .single();
+            userOfficeId = userData?.office_id;
+        }
+
+        // Log status change in history (only if status actually changed)
+        if (oldStatus !== status) {
+            try {
+                const historyEntry = {
+                    id: uuidv4(),
+                    parcel_id: id,
+                    old_status: oldStatus,
+                    new_status: status,
+                    changed_by_user_id: req.userId,
+                    office_id: userOfficeId,
+                    notes: notes || null,
+                    changed_at: new Date().toISOString(),
+                };
+
+                const { error: historyError } = await supabase
+                    .from('parcel_status_history')
+                    .insert([historyEntry]);
+
+                if (historyError) {
+                    console.error('⚠️ Error logging status history (non-blocking):', historyError.message);
+                    // Don't fail the request if history logging fails
+                    // This allows the system to work even if the history table doesn't exist yet
+                } else {
+                    console.log(`✅ Status history logged: ${oldStatus} → ${status}`);
+                }
+            } catch (historyErr) {
+                console.error('⚠️ Exception while logging status history (non-blocking):', historyErr.message);
+                // Continue even if history logging fails
+            }
+        }
 
         res.json({
             id: data.id,
@@ -193,5 +266,54 @@ exports.updateParcelStatus = async (req, res) => {
     } catch (error) {
         console.error('Error updating parcel status:', error);
         res.status(500).json({ message: 'Error updating parcel status', error: error.message });
+    }
+};
+
+// Get parcel status history
+exports.getParcelStatusHistory = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Get history with user and office information
+        const { data: history, error } = await supabase
+            .from('parcel_status_history')
+            .select(`
+                *,
+                changed_by_user:users!parcel_status_history_changed_by_user_id_fkey(
+                    id,
+                    full_name,
+                    email
+                ),
+                office:offices!parcel_status_history_office_id_fkey(
+                    id,
+                    name,
+                    country
+                )
+            `)
+            .eq('parcel_id', id)
+            .order('changed_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Format response
+        const formattedHistory = (history || []).map(entry => ({
+            id: entry.id,
+            parcelId: entry.parcel_id,
+            oldStatus: entry.old_status,
+            newStatus: entry.new_status,
+            changedByUserId: entry.changed_by_user_id,
+            changedByUserName: entry.changed_by_user?.full_name || 'Utilisateur inconnu',
+            changedByUserEmail: entry.changed_by_user?.email || null,
+            officeId: entry.office_id,
+            officeName: entry.office?.name || null,
+            officeCountry: entry.office?.country || null,
+            notes: entry.notes,
+            changedAt: entry.changed_at,
+        }));
+
+        res.json(formattedHistory);
+    } catch (error) {
+        console.error('Error fetching parcel status history:', error);
+        res.status(500).json({ message: 'Error fetching parcel status history', error: error.message });
     }
 };

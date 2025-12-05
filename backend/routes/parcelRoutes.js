@@ -7,5 +7,6 @@ const { verifyToken } = require('../middleware/auth');
 router.get('/', verifyToken, parcelController.getAllParcels);
 router.post('/', verifyToken, parcelController.createParcel);
 router.patch('/:id/status', verifyToken, parcelController.updateParcelStatus);
+router.get('/:id/history', verifyToken, parcelController.getParcelStatusHistory);
 
 module.exports = router;
