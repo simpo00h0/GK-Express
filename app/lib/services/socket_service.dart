@@ -111,6 +111,19 @@ class SocketService {
     });
   }
 
+  // Listen for new message events
+  static void onNewMessage(Function(Map<String, dynamic>) callback) {
+    if (_socket == null) {
+      debugPrint('Cannot listen: Socket not initialized');
+      return;
+    }
+
+    _socket!.on('new_message', (data) {
+      debugPrint('📨 New message received: $data');
+      callback(data as Map<String, dynamic>);
+    });
+  }
+
   // Disconnect socket
   static void disconnect() {
     if (_socket != null) {

@@ -7,7 +7,9 @@ import '../services/api_service.dart';
 import '../services/pdf_service.dart';
 import '../services/history_cache_service.dart';
 import '../widgets/status_timeline.dart';
+import '../models/office.dart';
 import 'update_status_screen.dart';
+import 'create_message_screen.dart';
 
 class ParcelDetailScreen extends StatefulWidget {
   final Parcel parcel;
@@ -27,6 +29,7 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
   List<ParcelStatusHistory> _history = [];
   bool _isLoadingHistory = true;
   Parcel? _currentParcel; // Parcel actuel (peut être mis à jour)
+  List<Office> _offices = [];
 
   @override
   void initState() {
@@ -35,6 +38,14 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
     // Load history lazily - only when user scrolls to it
     // This improves initial page load performance
     _loadHistory(forceRefresh: false);
+    _loadOffices();
+  }
+
+  Future<void> _loadOffices() async {
+    final offices = await ApiService.fetchOffices();
+    if (mounted) {
+      setState(() => _offices = offices);
+    }
   }
 
   Future<void> _loadHistory({bool forceRefresh = false}) async {
@@ -159,6 +170,29 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
       appBar: AppBar(
         title: const Text('Détails du Colis'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.message_rounded),
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CreateMessageScreen(
+                    offices: _offices,
+                    relatedParcel: _currentParcel ?? widget.parcel,
+                  ),
+                ),
+              );
+              if (result == true && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Message envoyé avec succès'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            tooltip: 'Envoyer un message',
+          ),
           Container(
             margin: const EdgeInsets.only(right: 12),
             child: ElevatedButton.icon(

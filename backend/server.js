@@ -24,10 +24,12 @@ app.use(express.json());
 const parcelRoutes = require('./routes/parcelRoutes');
 const authRoutes = require('./routes/authRoutes');
 const officeRoutes = require('./routes/officeRoutes');
+const messageRoutes = require('./routes/messageRoutes');
 
 app.use('/api/parcels', parcelRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/offices', officeRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Root Endpoint
 app.get('/', (req, res) => {

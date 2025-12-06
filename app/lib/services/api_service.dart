@@ -5,6 +5,7 @@ import '../models/parcel.dart';
 import '../models/office.dart';
 import '../models/user.dart';
 import '../models/parcel_status_history.dart';
+import '../models/message.dart';
 import 'auth_service.dart';
 import 'history_cache_service.dart';
 
@@ -206,6 +207,153 @@ class ApiService {
     } catch (e) {
       debugPrint('Error fetching parcel status history: $e');
       return [];
+    }
+  }
+
+  // ========== MESSAGES ==========
+
+  // Créer un nouveau message
+  static Future<Message?> createMessage({
+    required String toOfficeId,
+    required String subject,
+    required String content,
+    String? relatedParcelId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/messages'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${AuthService.token}',
+        },
+        body: json.encode({
+          'toOfficeId': toOfficeId,
+          'subject': subject,
+          'content': content,
+          if (relatedParcelId != null) 'relatedParcelId': relatedParcelId,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        return Message.fromJson(json.decode(response.body));
+      } else {
+        final errorBody = json.decode(response.body);
+        debugPrint('Error creating message: ${errorBody['message'] ?? response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('Error creating message: $e');
+      return null;
+    }
+  }
+
+  // Récupérer les messages reçus
+  static Future<List<Message>> fetchReceivedMessages() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/messages/received'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${AuthService.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => Message.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load received messages');
+      }
+    } catch (e) {
+      debugPrint('Error fetching received messages: $e');
+      return [];
+    }
+  }
+
+  // Récupérer les messages envoyés
+  static Future<List<Message>> fetchSentMessages() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/messages/sent'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${AuthService.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => Message.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load sent messages');
+      }
+    } catch (e) {
+      debugPrint('Error fetching sent messages: $e');
+      return [];
+    }
+  }
+
+  // Récupérer une conversation avec un bureau
+  static Future<List<Message>> fetchConversation(String officeId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/messages/conversation/$officeId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${AuthService.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => Message.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load conversation');
+      }
+    } catch (e) {
+      debugPrint('Error fetching conversation: $e');
+      return [];
+    }
+  }
+
+  // Marquer un message comme lu
+  static Future<bool> markMessageAsRead(String messageId) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/messages/$messageId/read'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${AuthService.token}',
+        },
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error marking message as read: $e');
+      return false;
+    }
+  }
+
+  // Récupérer le nombre de messages non lus
+  static Future<int> getUnreadMessageCount() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/messages/unread/count'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${AuthService.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['unreadCount'] ?? 0;
+      } else {
+        return 0;
+      }
+    } catch (e) {
+      debugPrint('Error fetching unread message count: $e');
+      return 0;
     }
   }
 }
