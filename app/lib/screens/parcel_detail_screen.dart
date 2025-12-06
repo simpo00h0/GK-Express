@@ -5,6 +5,7 @@ import '../models/parcel.dart';
 import '../models/parcel_status_history.dart';
 import '../services/api_service.dart';
 import '../services/pdf_service.dart';
+import '../services/history_cache_service.dart';
 import '../widgets/status_timeline.dart';
 import 'update_status_screen.dart';
 
@@ -31,10 +32,38 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
   void initState() {
     super.initState();
     _currentParcel = widget.parcel;
-    _loadHistory();
+    // Load history lazily - only when user scrolls to it
+    // This improves initial page load performance
+    _loadHistory(forceRefresh: false);
   }
 
-  Future<void> _loadHistory() async {
+  Future<void> _loadHistory({bool forceRefresh = false}) async {
+    // Try to load from cache first (unless force refresh)
+    if (!forceRefresh) {
+      // Load cache asynchronously to not block UI
+      HistoryCacheService.getCachedHistory(widget.parcel.id).then((cachedHistory) {
+        if (cachedHistory != null && cachedHistory.isNotEmpty && mounted) {
+          setState(() {
+            _history = cachedHistory;
+            _isLoadingHistory = false;
+          });
+          // Load in background to update cache (non-blocking)
+          _loadHistoryFromApi();
+        } else {
+          // No cache, load from API
+          _loadHistoryFromApi();
+        }
+      });
+      return;
+    }
+
+    // Force refresh, load from API
+    await _loadHistoryFromApi();
+  }
+
+  Future<void> _loadHistoryFromApi() async {
+    if (!mounted) return;
+    
     setState(() => _isLoadingHistory = true);
     try {
       final history = await ApiService.fetchParcelStatusHistory(widget.parcel.id);
@@ -43,6 +72,8 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
           _history = history;
           _isLoadingHistory = false;
         });
+        // Update cache
+        await HistoryCacheService.cacheHistory(widget.parcel.id, history);
       }
     } catch (e) {
       debugPrint('Error loading history: $e');
@@ -54,18 +85,14 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
 
   Future<void> _reloadParcel() async {
     try {
-      // Recharger la liste des colis pour obtenir le colis mis à jour
-      final parcels = await ApiService.fetchParcels();
-      final updatedParcel = parcels.firstWhere(
-        (p) => p.id == widget.parcel.id,
-        orElse: () => widget.parcel,
-      );
-      if (mounted) {
+      // Recharger uniquement ce colis (beaucoup plus rapide)
+      final updatedParcel = await ApiService.fetchParcelById(widget.parcel.id);
+      if (updatedParcel != null && mounted) {
         setState(() {
           _currentParcel = updatedParcel;
         });
-        // Recharger l'historique aussi
-        await _loadHistory();
+        // Recharger l'historique avec force refresh pour avoir les dernières données
+        await _loadHistory(forceRefresh: true);
       }
     } catch (e) {
       debugPrint('Error reloading parcel: $e');
@@ -75,9 +102,10 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
   @override
   void didUpdateWidget(ParcelDetailScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // Only reload if parcel ID changed, not on every rebuild
     if (oldWidget.parcel.id != widget.parcel.id) {
       _currentParcel = widget.parcel;
-      _loadHistory();
+      _loadHistory(forceRefresh: false); // Use cache if available
     }
   }
 
@@ -135,7 +163,7 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
             margin: const EdgeInsets.only(right: 12),
             child: ElevatedButton.icon(
               onPressed: () async {
-                await Navigator.push(
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => UpdateStatusScreen(
@@ -149,6 +177,12 @@ class _ParcelDetailScreenState extends State<ParcelDetailScreen> {
                     ),
                   ),
                 );
+                
+                // Only reload if status was actually updated (result indicates success)
+                // Don't reload on simple back navigation
+                if (mounted && result == true) {
+                  await _loadHistory(forceRefresh: true);
+                }
               },
               icon: const Icon(Icons.edit_rounded, size: 18),
               label: const Text('Modifier Statut'),

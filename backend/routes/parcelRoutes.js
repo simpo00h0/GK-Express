@@ -5,6 +5,7 @@ const { verifyToken } = require('../middleware/auth');
 
 // All parcel routes require authentication
 router.get('/', verifyToken, parcelController.getAllParcels);
+router.get('/:id', verifyToken, parcelController.getParcelById);
 router.post('/', verifyToken, parcelController.createParcel);
 router.patch('/:id/status', verifyToken, parcelController.updateParcelStatus);
 router.get('/:id/history', verifyToken, parcelController.getParcelStatusHistory);

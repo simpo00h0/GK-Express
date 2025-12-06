@@ -73,6 +73,43 @@ exports.getAllParcels = async (req, res) => {
     }
 };
 
+// Get single parcel by ID
+exports.getParcelById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const { data: parcel, error } = await supabase
+            .from('parcels')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error || !parcel) {
+            return res.status(404).json({ message: 'Parcel not found' });
+        }
+
+        // Convert snake_case to camelCase
+        res.json({
+            id: parcel.id,
+            senderName: parcel.sender_name,
+            senderPhone: parcel.sender_phone,
+            receiverName: parcel.receiver_name,
+            receiverPhone: parcel.receiver_phone,
+            destination: parcel.destination,
+            status: parcel.status,
+            createdAt: parcel.created_at,
+            price: parcel.price || 0,
+            isPaid: parcel.is_paid || false,
+            originOfficeId: parcel.origin_office_id,
+            destinationOfficeId: parcel.destination_office_id,
+            paidAtOfficeId: parcel.paid_at_office_id,
+        });
+    } catch (error) {
+        console.error('Error fetching parcel:', error);
+        res.status(500).json({ message: 'Error fetching parcel', error: error.message });
+    }
+};
+
 exports.createParcel = async (req, res) => {
     try {
         const { senderName, senderPhone, receiverName, receiverPhone, destination, price, isPaid, originOfficeId, destinationOfficeId } = req.body;

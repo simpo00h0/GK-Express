@@ -6,6 +6,7 @@ import '../models/office.dart';
 import '../models/user.dart';
 import '../models/parcel_status_history.dart';
 import 'auth_service.dart';
+import 'history_cache_service.dart';
 
 class ApiService {
   static const String baseUrl = 'https://gk-express.onrender.com/api';
@@ -124,6 +125,28 @@ class ApiService {
     }
   }
 
+  // Fetch single parcel by ID
+  static Future<Parcel?> fetchParcelById(String id) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/parcels/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${AuthService.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return Parcel.fromJson(json.decode(response.body));
+      } else {
+        throw Exception('Failed to load parcel');
+      }
+    } catch (e) {
+      debugPrint('Error fetching parcel: $e');
+      return null;
+    }
+  }
+
   // Update parcel status
   static Future<bool> updateParcelStatus(String id, String status, {String? notes}) async {
     try {
@@ -143,6 +166,8 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
+        // Invalidate cache for this parcel to force refresh
+        await HistoryCacheService.invalidateCache(id);
         return true;
       } else {
         final errorBody = json.decode(response.body);

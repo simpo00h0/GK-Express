@@ -104,7 +104,7 @@ class StatusTimeline extends StatelessWidget {
             final isLast = index == history.length - 1;
 
             return _buildTimelineItem(item, isLast);
-          }).toList(),
+          }),
         ],
       ),
     );

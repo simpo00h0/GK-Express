@@ -36,19 +36,23 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
   Future<void> _updateStatus() async {
     setState(() => _isLoading = true);
 
+    final newStatus = _selectedStatus.name;
+    final notes = _notesController.text.trim().isNotEmpty
+        ? _notesController.text.trim()
+        : null;
+
     final success = await ApiService.updateParcelStatus(
       widget.parcel.id,
-      _selectedStatus.name,
-      notes: _notesController.text.trim().isNotEmpty
-          ? _notesController.text.trim()
-          : null,
+      newStatus,
+      notes: notes,
     );
 
     setState(() => _isLoading = false);
 
     if (success && mounted) {
+      // Callback immédiat pour mise à jour rapide
       widget.onStatusUpdated();
-      Navigator.pop(context);
+      Navigator.pop(context, true); // Return true to indicate status was updated
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Row(
