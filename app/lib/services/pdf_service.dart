@@ -236,39 +236,39 @@ class PdfService {
   static Future<Uint8List> _generateParcelPdf(Parcel parcel) async {
     final pdf = pw.Document();
     final shortId = parcel.id.substring(0, 8).toUpperCase();
-    final date = DateFormat('dd/MM/yyyy HH:mm').format(parcel.createdAt);
+    final invoiceNumber = 'FAC-$shortId-${DateFormat('yyyyMMdd').format(parcel.createdAt)}';
+    final invoiceDate = DateFormat('dd/MM/yyyy').format(parcel.createdAt);
 
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(40),
+        margin: const pw.EdgeInsets.all(30),
         build: (context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              // Header
-              _buildHeader(shortId),
-              pw.SizedBox(height: 30),
+              // En-tête professionnel avec logo et informations entreprise
+              _buildProfessionalHeader(invoiceNumber, invoiceDate),
+              pw.SizedBox(height: 25),
 
-              // QR Code and Info Row
-              pw.Row(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  // QR Code
-                  _buildQrCodeSection(parcel, shortId),
-                  pw.SizedBox(width: 40),
-                  // Info
-                  pw.Expanded(child: _buildInfoSection(parcel, date)),
-                ],
-              ),
-              pw.SizedBox(height: 30),
+              // Informations client et expéditeur
+              _buildClientAndSenderSection(parcel),
+              pw.SizedBox(height: 25),
 
-              // Sender and Receiver
-              _buildContactsSection(parcel),
-              pw.SizedBox(height: 30),
+              // Tableau détaillé des services
+              _buildServicesTable(parcel, shortId),
+              pw.SizedBox(height: 20),
 
-              // Footer
-              _buildFooter(shortId),
+              // Totaux et paiement
+              _buildTotalsSection(parcel),
+              pw.SizedBox(height: 25),
+
+              // QR Code et code-barres pour suivi
+              _buildTrackingSection(parcel, shortId),
+              pw.SizedBox(height: 20),
+
+              // Conditions et mentions légales
+              _buildTermsAndConditions(),
             ],
           );
         },
@@ -278,86 +278,156 @@ class PdfService {
     return pdf.save();
   }
 
-  static pw.Widget _buildHeader(String shortId) {
+  // En-tête professionnel de facture
+  static pw.Widget _buildProfessionalHeader(String invoiceNumber, String invoiceDate) {
     return pw.Container(
-      padding: const pw.EdgeInsets.all(20),
+      padding: const pw.EdgeInsets.all(25),
       decoration: pw.BoxDecoration(
-        color: PdfColors.white,
-        borderRadius: pw.BorderRadius.circular(12),
-        border: pw.Border.all(color: PdfColors.grey300, width: 1),
+        color: PdfColor.fromHex('#1A1A1A'),
+        borderRadius: pw.BorderRadius.circular(8),
       ),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          // Logo GK Express
-          pw.Row(
-            crossAxisAlignment: pw.CrossAxisAlignment.center,
-            children: [
-              // Speedometer logo
-              _buildGKLogo(),
-              pw.SizedBox(width: 8),
-              // Text EXpress DELIVERY
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                mainAxisSize: pw.MainAxisSize.min,
-                children: [
-                  pw.Row(
+          // Logo et informations entreprise
+          pw.Expanded(
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Logo sur fond blanc (comme l'original)
+                pw.Container(
+                  padding: const pw.EdgeInsets.all(15),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.white,
+                    borderRadius: pw.BorderRadius.circular(8),
+                  ),
+                  child: pw.Row(
                     children: [
-                      pw.Text(
-                        'EX',
-                        style: pw.TextStyle(
-                          fontSize: 24,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColor.fromHex('#E53935'),
-                        ),
-                      ),
-                      pw.Text(
-                        'press',
-                        style: pw.TextStyle(
-                          fontSize: 24,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColor.fromHex('#1A1A1A'),
-                        ),
+                      _buildGKLogo(),
+                      pw.SizedBox(width: 12),
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        mainAxisSize: pw.MainAxisSize.min,
+                        children: [
+                          pw.Row(
+                            children: [
+                              pw.Text(
+                                'EX',
+                                style: pw.TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: PdfColor.fromHex('#E53935'),
+                                ),
+                              ),
+                              pw.Text(
+                                'press',
+                                style: pw.TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: PdfColor.fromHex('#1A1A1A'),
+                                ),
+                              ),
+                            ],
+                          ),
+                          pw.Text(
+                            'DELIVERY',
+                            style: pw.TextStyle(
+                              fontSize: 8,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColor.fromHex('#E53935'),
+                              letterSpacing: 2,
+                            ),
+                          ),
+                          pw.SizedBox(height: 2),
+                          pw.Text(
+                            'Simple, rapide et efficace!',
+                            style: pw.TextStyle(
+                              fontSize: 8,
+                              fontStyle: pw.FontStyle.italic,
+                              color: PdfColor.fromHex('#1A1A1A'),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  pw.Text(
-                    'DELIVERY',
-                    style: pw.TextStyle(
-                      fontSize: 8,
-                      fontWeight: pw.FontWeight.bold,
-                      color: PdfColor.fromHex('#E53935'),
-                      letterSpacing: 2,
-                    ),
+                ),
+                pw.SizedBox(height: 15),
+                pw.Text(
+                  'Service de livraison express',
+                  style: pw.TextStyle(
+                    fontSize: 11,
+                    color: PdfColors.grey300,
                   ),
-                  pw.SizedBox(height: 2),
-                  pw.Text(
-                    'Simple, rapide et efficace!',
-                    style: pw.TextStyle(
-                      fontSize: 8,
-                      fontStyle: pw.FontStyle.italic,
-                      color: PdfColor.fromHex('#1A1A1A'),
-                    ),
+                ),
+                pw.SizedBox(height: 8),
+                pw.Text(
+                  'Email: contact@gkexpress.com',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    color: PdfColors.grey400,
                   ),
-                ],
+                ),
+                pw.Text(
+                  'Téléphone: +33 1 XX XX XX XX',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    color: PdfColors.grey400,
+                  ),
+                ),
+                pw.Text(
+                  'Site web: www.gkexpress.com',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    color: PdfColors.grey400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Numéro de facture et date
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: pw.BoxDecoration(
+                  color: PdfColor.fromHex('#E53935'),
+                  borderRadius: pw.BorderRadius.circular(6),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  children: [
+                    pw.Text(
+                      'FACTURE',
+                      style: pw.TextStyle(
+                        fontSize: 20,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.white,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    pw.SizedBox(height: 8),
+                    pw.Text(
+                      'N° $invoiceNumber',
+                      style: pw.TextStyle(
+                        fontSize: 12,
+                        color: PdfColors.white,
+                      ),
+                    ),
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      'Date: $invoiceDate',
+                      style: pw.TextStyle(
+                        fontSize: 10,
+                        color: PdfColors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
-          ),
-          // ID du colis
-          pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: pw.BoxDecoration(
-              color: PdfColor.fromHex('#E53935'),
-              borderRadius: pw.BorderRadius.circular(8),
-            ),
-            child: pw.Text(
-              '#$shortId',
-              style: pw.TextStyle(
-                fontSize: 18,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.white,
-              ),
-            ),
           ),
         ],
       ),
@@ -370,6 +440,7 @@ class PdfService {
       width: 55,
       height: 55,
       decoration: pw.BoxDecoration(
+        color: PdfColors.white,
         border: pw.Border.all(color: PdfColor.fromHex('#1A1A1A'), width: 4),
         shape: pw.BoxShape.circle,
       ),
@@ -404,29 +475,106 @@ class PdfService {
     );
   }
 
-  static pw.Widget _buildQrCodeSection(Parcel parcel, String shortId) {
+  // Section de suivi avec QR code et code-barres
+  static pw.Widget _buildTrackingSection(Parcel parcel, String shortId) {
     final qrData = _generateQrData(parcel, shortId);
-    return pw.Container(
-      padding: const pw.EdgeInsets.all(20),
-      decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: PdfColors.grey300, width: 2),
-        borderRadius: pw.BorderRadius.circular(12),
-      ),
-      child: pw.Column(
-        children: [
-          pw.BarcodeWidget(
-            data: qrData,
-            barcode: Barcode.qrCode(),
-            width: 150,
-            height: 150,
+    
+    return pw.Row(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        // QR Code
+        pw.Container(
+          padding: const pw.EdgeInsets.all(15),
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: PdfColors.grey300, width: 1),
+            borderRadius: pw.BorderRadius.circular(8),
           ),
-          pw.SizedBox(height: 10),
-          pw.Text(
-            'Scannez pour les details',
-            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
+          child: pw.Column(
+            mainAxisSize: pw.MainAxisSize.min,
+            children: [
+              pw.BarcodeWidget(
+                data: qrData,
+                barcode: Barcode.qrCode(),
+                width: 120,
+                height: 120,
+              ),
+              pw.SizedBox(height: 8),
+              pw.Text(
+                'Scannez pour suivre',
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  color: PdfColors.grey600,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        pw.SizedBox(width: 20),
+        // Code-barres et informations de suivi
+        pw.Expanded(
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Container(
+                padding: const pw.EdgeInsets.all(15),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.grey100,
+                  borderRadius: pw.BorderRadius.circular(8),
+                  border: pw.Border.all(color: PdfColors.grey300, width: 1),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      'SUIVI EN LIGNE',
+                      style: pw.TextStyle(
+                        fontSize: 10,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColor.fromHex('#1A1A1A'),
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    pw.SizedBox(height: 10),
+                    pw.Text(
+                      'Numéro de suivi:',
+                      style: pw.TextStyle(
+                        fontSize: 9,
+                        color: PdfColors.grey600,
+                      ),
+                    ),
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      shortId,
+                      style: pw.TextStyle(
+                        fontSize: 16,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColor.fromHex('#9C27B0'),
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    pw.SizedBox(height: 12),
+                    pw.BarcodeWidget(
+                      data: shortId,
+                      barcode: Barcode.code128(),
+                      width: 200,
+                      height: 50,
+                    ),
+                    pw.SizedBox(height: 10),
+                    pw.Text(
+                      'www.gkexpress.com/track/$shortId',
+                      style: pw.TextStyle(
+                        fontSize: 9,
+                        color: PdfColor.fromHex('#9C27B0'),
+                        decoration: pw.TextDecoration.underline,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -460,69 +608,197 @@ Suivi: gkexpress.com/track/$shortId''';
     }
   }
 
-  static pw.Widget _buildInfoSection(Parcel parcel, String date) {
+  // Tableau détaillé des services
+  static pw.Widget _buildServicesTable(Parcel parcel, String shortId) {
     return pw.Container(
-      padding: const pw.EdgeInsets.all(20),
       decoration: pw.BoxDecoration(
-        color: PdfColors.grey100,
-        borderRadius: pw.BorderRadius.circular(12),
+        border: pw.Border.all(color: PdfColors.grey300, width: 1),
+        borderRadius: pw.BorderRadius.circular(8),
       ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
+      child: pw.Table(
+        border: pw.TableBorder(
+          verticalInside: pw.BorderSide(color: PdfColors.grey300, width: 1),
+          horizontalInside: pw.BorderSide(color: PdfColors.grey300, width: 1),
+        ),
+        columnWidths: {
+          0: const pw.FlexColumnWidth(1),
+          1: const pw.FlexColumnWidth(2),
+          2: const pw.FlexColumnWidth(1),
+          3: const pw.FlexColumnWidth(1.5),
+        },
         children: [
-          _buildInfoRow(
-            'Destination',
-            parcel.destination,
-            PdfColor.fromHex('#4FACFE'),
+          // En-tête du tableau
+          pw.TableRow(
+            decoration: pw.BoxDecoration(
+              color: PdfColor.fromHex('#1A1A1A'),
+            ),
+            children: [
+              _buildTableCell('N°', isHeader: true),
+              _buildTableCell('Description', isHeader: true),
+              _buildTableCell('Statut', isHeader: true),
+              _buildTableCell('Montant (FCFA)', isHeader: true, align: pw.TextAlign.right),
+            ],
           ),
-          pw.SizedBox(height: 12),
-          _buildInfoRow(
-            'Statut',
-            _getStatusText(parcel.status),
-            _getStatusColor(parcel.status),
+          // Ligne de service
+          pw.TableRow(
+            children: [
+              _buildTableCell('#$shortId'),
+              _buildTableCell(
+                'Service de livraison express\n'
+                'De: ${parcel.senderName}\n'
+                'Vers: ${parcel.receiverName}\n'
+                'Destination: ${parcel.destination}'
+                '${_getPaymentInfo(parcel) != null ? '\nPaiement: ${_getPaymentInfo(parcel)}' : ''}',
+              ),
+              _buildTableCell(
+                _getStatusText(parcel.status),
+                statusColor: _getStatusColor(parcel.status),
+              ),
+              _buildTableCell(
+                parcel.price.toStringAsFixed(0),
+                align: pw.TextAlign.right,
+              ),
+            ],
           ),
-          pw.SizedBox(height: 12),
-          _buildInfoRow(
-            'Prix',
-            '${parcel.price.toStringAsFixed(0)} CFA',
-            PdfColor.fromHex('#10B981'),
-          ),
-          pw.SizedBox(height: 12),
-          _buildInfoRow(
-            'Paiement',
-            parcel.isPaid ? 'Paye' : 'Non paye',
-            parcel.isPaid
-                ? PdfColor.fromHex('#10B981')
-                : PdfColor.fromHex('#EF4444'),
-          ),
-          pw.SizedBox(height: 12),
-          _buildInfoRow('Date de creation', date, PdfColors.grey700),
         ],
       ),
     );
   }
 
-  static pw.Widget _buildInfoRow(String label, String value, PdfColor color) {
+  static pw.Widget _buildTableCell(
+    String text, {
+    bool isHeader = false,
+    PdfColor? statusColor,
+    pw.TextAlign align = pw.TextAlign.left,
+  }) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(12),
+      child: pw.Text(
+        text,
+        textAlign: align,
+        style: pw.TextStyle(
+          fontSize: isHeader ? 10 : 11,
+          fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
+          color: isHeader
+              ? PdfColors.white
+              : (statusColor != null ? PdfColors.white : PdfColor.fromHex('#1A1A1A')),
+        ),
+      ),
+      decoration: statusColor != null
+          ? pw.BoxDecoration(
+              color: statusColor,
+              borderRadius: pw.BorderRadius.circular(4),
+            )
+          : null,
+    );
+  }
+
+  // Déterminer qui a payé (seulement si payé)
+  static String? _getPaymentInfo(Parcel parcel) {
+    if (parcel.isPaid) {
+      if (parcel.paidAtOfficeId == parcel.originOfficeId) {
+        return 'Payé par l\'expéditeur';
+      } else if (parcel.paidAtOfficeId == parcel.destinationOfficeId) {
+        return 'Payé par le destinataire';
+      } else {
+        return 'Payé';
+      }
+    }
+    // Si non payé, ne rien retourner
+    return null;
+  }
+
+  // Section des totaux
+  static pw.Widget _buildTotalsSection(Parcel parcel) {
+    final subtotal = parcel.price;
+    final tva = subtotal * 0.18; // TVA de 18%
+    final total = subtotal + tva;
+    final paymentInfo = _getPaymentInfo(parcel);
+
+    return pw.Row(
+      children: [
+        pw.Spacer(),
+        pw.Container(
+          width: 300,
+          padding: const pw.EdgeInsets.all(20),
+          decoration: pw.BoxDecoration(
+            color: PdfColors.grey100,
+            borderRadius: pw.BorderRadius.circular(8),
+            border: pw.Border.all(color: PdfColors.grey300, width: 1),
+          ),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              _buildTotalRow('Sous-total HT', subtotal),
+              pw.SizedBox(height: 8),
+              _buildTotalRow('TVA (18%)', tva),
+              pw.Divider(color: PdfColors.grey400, height: 20),
+              _buildTotalRow(
+                'TOTAL TTC',
+                total,
+                isTotal: true,
+              ),
+              pw.SizedBox(height: 15),
+              // Statut de paiement
+              pw.Container(
+                padding: const pw.EdgeInsets.all(12),
+                decoration: pw.BoxDecoration(
+                  color: parcel.isPaid
+                      ? PdfColor.fromHex('#10B981')
+                      : PdfColor.fromHex('#EF4444'),
+                  borderRadius: pw.BorderRadius.circular(6),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    pw.Text(
+                      parcel.isPaid ? '✓ PAYÉ' : '⚠ NON PAYÉ',
+                      style: pw.TextStyle(
+                        fontSize: 12,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.white,
+                      ),
+                    ),
+                    // Afficher qui a payé seulement si payé
+                    if (paymentInfo != null) ...[
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        paymentInfo,
+                        style: pw.TextStyle(
+                          fontSize: 9,
+                          color: PdfColors.white,
+                        ),
+                        textAlign: pw.TextAlign.center,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  static pw.Widget _buildTotalRow(String label, double amount, {bool isTotal = false}) {
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
         pw.Text(
           label,
-          style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey600),
-        ),
-        pw.Container(
-          padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: pw.BoxDecoration(
-            color: color,
-            borderRadius: pw.BorderRadius.circular(6),
+          style: pw.TextStyle(
+            fontSize: isTotal ? 13 : 11,
+            fontWeight: isTotal ? pw.FontWeight.bold : pw.FontWeight.normal,
+            color: PdfColor.fromHex('#1A1A1A'),
           ),
-          child: pw.Text(
-            value,
-            style: pw.TextStyle(
-              fontSize: 11,
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColors.white,
-            ),
+        ),
+        pw.Text(
+          '${amount.toStringAsFixed(0)} FCFA',
+          style: pw.TextStyle(
+            fontSize: isTotal ? 16 : 12,
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColor.fromHex('#1A1A1A'),
           ),
         ),
       ],
@@ -544,108 +820,188 @@ Suivi: gkexpress.com/track/$shortId''';
     }
   }
 
-  static pw.Widget _buildContactsSection(Parcel parcel) {
+  // Section client et expéditeur
+  static pw.Widget _buildClientAndSenderSection(Parcel parcel) {
     return pw.Row(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
+        // Client (Destinataire)
         pw.Expanded(
-          child: _buildContactCard(
-            'EXPEDITEUR',
-            parcel.senderName,
-            parcel.senderPhone,
-            PdfColor.fromHex('#667EEA'),
+          child: pw.Container(
+            padding: const pw.EdgeInsets.all(18),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.grey100,
+              borderRadius: pw.BorderRadius.circular(8),
+              border: pw.Border.all(color: PdfColors.grey300, width: 1),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'FACTURÉ À',
+                  style: pw.TextStyle(
+                    fontSize: 9,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.grey600,
+                    letterSpacing: 1,
+                  ),
+                ),
+                pw.SizedBox(height: 10),
+                pw.Text(
+                  parcel.receiverName,
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColor.fromHex('#1A1A1A'),
+                  ),
+                ),
+                pw.SizedBox(height: 6),
+                pw.Text(
+                  'Téléphone: ${parcel.receiverPhone}',
+                  style: const pw.TextStyle(
+                    fontSize: 11,
+                    color: PdfColors.grey700,
+                  ),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'Destination: ${parcel.destination}',
+                  style: const pw.TextStyle(
+                    fontSize: 11,
+                    color: PdfColors.grey700,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         pw.SizedBox(width: 20),
+        // Expéditeur
         pw.Expanded(
-          child: _buildContactCard(
-            'DESTINATAIRE',
-            parcel.receiverName,
-            parcel.receiverPhone,
-            PdfColor.fromHex('#F093FB'),
+          child: pw.Container(
+            padding: const pw.EdgeInsets.all(18),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.grey100,
+              borderRadius: pw.BorderRadius.circular(8),
+              border: pw.Border.all(color: PdfColors.grey300, width: 1),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'EXPÉDITEUR',
+                  style: pw.TextStyle(
+                    fontSize: 9,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.grey600,
+                    letterSpacing: 1,
+                  ),
+                ),
+                pw.SizedBox(height: 10),
+                pw.Text(
+                  parcel.senderName,
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColor.fromHex('#1A1A1A'),
+                  ),
+                ),
+                pw.SizedBox(height: 6),
+                pw.Text(
+                  'Téléphone: ${parcel.senderPhone}',
+                  style: const pw.TextStyle(
+                    fontSize: 11,
+                    color: PdfColors.grey700,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
     );
   }
 
-  static pw.Widget _buildContactCard(
-    String title,
-    String name,
-    String phone,
-    PdfColor color,
-  ) {
+  // Conditions et mentions légales
+  static pw.Widget _buildTermsAndConditions() {
     return pw.Container(
       padding: const pw.EdgeInsets.all(20),
       decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: color, width: 2),
-        borderRadius: pw.BorderRadius.circular(12),
+        color: PdfColors.grey100,
+        borderRadius: pw.BorderRadius.circular(8),
+        border: pw.Border.all(color: PdfColors.grey300, width: 1),
       ),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: pw.BoxDecoration(
-              color: color,
-              borderRadius: pw.BorderRadius.circular(4),
-            ),
-            child: pw.Text(
-              title,
-              style: pw.TextStyle(
-                fontSize: 10,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.white,
-              ),
+          pw.Text(
+            'CONDITIONS DE PAIEMENT',
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColor.fromHex('#1A1A1A'),
+              letterSpacing: 1,
             ),
           ),
-          pw.SizedBox(height: 12),
+          pw.SizedBox(height: 8),
           pw.Text(
-            name,
-            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+            '• Paiement possible à l\'envoi (par l\'expéditeur) ou à la réception (par le destinataire)\n'
+            '• Paiement en espèces ou par carte bancaire\n'
+            '• Si non payé à l\'envoi, le destinataire doit payer à la réception\n'
+            '• Délai de paiement: 30 jours pour les clients professionnels\n'
+            '• En cas de retard de paiement, des intérêts de 3% par mois seront appliqués',
+            style: pw.TextStyle(
+              fontSize: 9,
+              color: PdfColors.grey700,
+              height: 1.5,
+            ),
           ),
-          pw.SizedBox(height: 4),
+          pw.SizedBox(height: 15),
           pw.Text(
-            phone,
-            style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey600),
+            'MENTIONS LÉGALES',
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColor.fromHex('#1A1A1A'),
+              letterSpacing: 1,
+            ),
           ),
-        ],
-      ),
-    );
-  }
-
-  static pw.Widget _buildFooter(String shortId) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.all(16),
-      decoration: pw.BoxDecoration(
-        color: PdfColors.grey200,
-        borderRadius: pw.BorderRadius.circular(8),
-      ),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
+          pw.SizedBox(height: 8),
+          pw.Text(
+            '• Cette facture est générée automatiquement par le système GK Express\n'
+            '• En cas de réclamation, contactez-nous à contact@gkexpress.com\n'
+            '• Les conditions générales de vente sont disponibles sur www.gkexpress.com/cgv\n'
+            '• Numéro SIRET: [À compléter]\n'
+            '• TVA Intracommunautaire: [À compléter]',
+            style: pw.TextStyle(
+              fontSize: 9,
+              color: PdfColors.grey700,
+              height: 1.5,
+            ),
+          ),
+          pw.SizedBox(height: 15),
+          pw.Divider(color: PdfColors.grey400),
+          pw.SizedBox(height: 10),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text(
-                'Suivi en ligne:',
-                style: const pw.TextStyle(
-                  fontSize: 10,
-                  color: PdfColors.grey600,
+                'Document généré automatiquement',
+                style: pw.TextStyle(
+                  fontSize: 8,
+                  color: PdfColors.grey500,
+                  fontStyle: pw.FontStyle.italic,
                 ),
               ),
               pw.Text(
-                'gkexpress.com/track/$shortId',
+                'GK Express - Simple, rapide et efficace!',
                 style: pw.TextStyle(
-                  fontSize: 12,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColor.fromHex('#9C27B0'),
+                  fontSize: 8,
+                  color: PdfColors.grey500,
+                  fontStyle: pw.FontStyle.italic,
                 ),
               ),
             ],
-          ),
-          pw.Text(
-            'GK Express - Document genere automatiquement',
-            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
           ),
         ],
       ),
