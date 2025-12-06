@@ -120,61 +120,136 @@ class _MainLayoutState extends State<MainLayout> {
     super.dispose();
   }
 
+  // Variables calculées une seule fois et mises à jour seulement quand nécessaire
+  List<Parcel>? _cachedSentParcels;
+  List<Parcel>? _cachedReceivedParcels;
+  List<Parcel>? _cachedBossSentParcels;
+  List<Parcel>? _cachedBossReceivedParcels;
+  List<Parcel>? _cachedBossAllParcels;
+  int _parcelsHashCode = 0;
+  String? _lastSelectedOfficeId;
+  String? _lastUserOfficeId;
+
+  void _invalidateParcelCaches() {
+    _cachedSentParcels = null;
+    _cachedReceivedParcels = null;
+    _cachedBossSentParcels = null;
+    _cachedBossReceivedParcels = null;
+    _cachedBossAllParcels = null;
+  }
+
+  int _computeParcelsHash() {
+    // Simple hash basé sur le nombre de colis et leur statut
+    return _parcels.length.hashCode ^ 
+           _parcels.fold(0, (sum, p) => sum ^ p.id.hashCode);
+  }
+
   Future<void> _loadParcels() async {
     setState(() => _isLoading = true);
     final parcels = await ApiService.fetchParcels();
     setState(() {
       _parcels = parcels;
       _isLoading = false;
+      _parcelsHashCode = _computeParcelsHash();
+      _invalidateParcelCaches();
     });
   }
 
   void _addParcel(Parcel parcel) {
     setState(() {
       _parcels.insert(0, parcel);
+      _parcelsHashCode = _computeParcelsHash();
+      _invalidateParcelCaches();
     });
   }
 
   List<Parcel> _getSentParcels() {
     final userOfficeId = AuthService.currentUser?.officeId;
     if (userOfficeId == null) return [];
-    return _parcels.where((p) => p.originOfficeId == userOfficeId).toList();
+    
+    // Utiliser le cache si disponible et si les données n'ont pas changé
+    if (_cachedSentParcels != null && 
+        _lastUserOfficeId == userOfficeId &&
+        _parcelsHashCode == _computeParcelsHash()) {
+      return _cachedSentParcels!;
+    }
+    
+    _cachedSentParcels = _parcels.where((p) => p.originOfficeId == userOfficeId).toList();
+    _lastUserOfficeId = userOfficeId;
+    return _cachedSentParcels!;
   }
 
   List<Parcel> _getReceivedParcels() {
     final userOfficeId = AuthService.currentUser?.officeId;
     if (userOfficeId == null) return [];
-    return _parcels
+    
+    // Utiliser le cache si disponible et si les données n'ont pas changé
+    if (_cachedReceivedParcels != null && 
+        _lastUserOfficeId == userOfficeId &&
+        _parcelsHashCode == _computeParcelsHash()) {
+      return _cachedReceivedParcels!;
+    }
+    
+    _cachedReceivedParcels = _parcels
         .where((p) => p.destinationOfficeId == userOfficeId)
         .toList();
+    return _cachedReceivedParcels!;
   }
 
   // Boss: colis envoyés par le bureau sélectionné
   List<Parcel> _getBossSentParcels() {
     if (_selectedOfficeId == null) return _parcels;
-    return _parcels
+    
+    // Utiliser le cache si disponible et si les données n'ont pas changé
+    if (_cachedBossSentParcels != null && 
+        _lastSelectedOfficeId == _selectedOfficeId &&
+        _parcelsHashCode == _computeParcelsHash()) {
+      return _cachedBossSentParcels!;
+    }
+    
+    _cachedBossSentParcels = _parcels
         .where((p) => p.originOfficeId == _selectedOfficeId)
         .toList();
+    _lastSelectedOfficeId = _selectedOfficeId;
+    return _cachedBossSentParcels!;
   }
 
   // Boss: colis reçus par le bureau sélectionné
   List<Parcel> _getBossReceivedParcels() {
     if (_selectedOfficeId == null) return _parcels;
-    return _parcels
+    
+    // Utiliser le cache si disponible et si les données n'ont pas changé
+    if (_cachedBossReceivedParcels != null && 
+        _lastSelectedOfficeId == _selectedOfficeId &&
+        _parcelsHashCode == _computeParcelsHash()) {
+      return _cachedBossReceivedParcels!;
+    }
+    
+    _cachedBossReceivedParcels = _parcels
         .where((p) => p.destinationOfficeId == _selectedOfficeId)
         .toList();
+    return _cachedBossReceivedParcels!;
   }
 
   // Boss: tous les colis du bureau sélectionné
   List<Parcel> _getBossAllParcels() {
     if (_selectedOfficeId == null) return _parcels;
-    return _parcels
+    
+    // Utiliser le cache si disponible et si les données n'ont pas changé
+    if (_cachedBossAllParcels != null && 
+        _lastSelectedOfficeId == _selectedOfficeId &&
+        _parcelsHashCode == _computeParcelsHash()) {
+      return _cachedBossAllParcels!;
+    }
+    
+    _cachedBossAllParcels = _parcels
         .where(
           (p) =>
               p.originOfficeId == _selectedOfficeId ||
               p.destinationOfficeId == _selectedOfficeId,
         )
         .toList();
+    return _cachedBossAllParcels!;
   }
 
   // Le Boss ne peut pas créer de colis, il supervise uniquement

@@ -74,14 +74,11 @@ class _EnhancedParcelCardState extends State<EnhancedParcelCard> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: AppTheme.animationDuration,
-        curve: AppTheme.animationCurve,
-        transform: Matrix4.identity()
-          ..setTranslationRaw(0.0, _isHovered ? -4.0 : 0.0, 0.0),
+      child: Transform.translate(
+        offset: Offset(0.0, _isHovered ? -4.0 : 0.0),
         child: AnimatedContainer(
-          duration: AppTheme.animationDuration,
-          curve: AppTheme.animationCurve,
+          duration: const Duration(milliseconds: 150), // Plus rapide
+          curve: Curves.easeOut,
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
             color: AppTheme.surface,

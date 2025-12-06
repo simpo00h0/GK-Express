@@ -164,53 +164,82 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  List<Parcel> get _filteredParcels {
-    final now = DateTime.now();
+  // Cache simple pour éviter les recalculs
+  List<Parcel>? _lastFilteredParcels;
+  String? _lastPeriod;
+  DateTime? _lastCustomStart;
+  DateTime? _lastCustomEnd;
+  int? _lastParcelsLength;
 
-    // Les colis sont déjà filtrés par bureau dans MainLayout
+  List<Parcel> get _filteredParcels {
+    // Utiliser le cache si rien n'a changé
+    if (_lastFilteredParcels != null &&
+        _lastPeriod == _selectedPeriod &&
+        _lastCustomStart == _customStartDate &&
+        _lastCustomEnd == _customEndDate &&
+        _lastParcelsLength == widget.parcels.length) {
+      return _lastFilteredParcels!;
+    }
+
+    final now = DateTime.now();
     var parcels = widget.parcels;
+    List<Parcel> filtered;
 
     // Filtrer par période
     switch (_selectedPeriod) {
       case 'today':
-        return parcels.where((p) {
+        filtered = parcels.where((p) {
           final date = p.createdAt;
           return date.year == now.year &&
               date.month == now.month &&
               date.day == now.day;
         }).toList();
+        break;
 
       case 'week':
         final weekStart = now.subtract(Duration(days: now.weekday - 1));
         final weekEnd = weekStart.add(const Duration(days: 6));
-        return parcels.where((p) {
+        filtered = parcels.where((p) {
           return p.createdAt.isAfter(
                 weekStart.subtract(const Duration(days: 1)),
               ) &&
               p.createdAt.isBefore(weekEnd.add(const Duration(days: 1)));
         }).toList();
+        break;
 
       case 'month':
-        return parcels.where((p) {
+        filtered = parcels.where((p) {
           return p.createdAt.year == now.year && p.createdAt.month == now.month;
         }).toList();
+        break;
 
       case 'custom':
         if (_customStartDate == null || _customEndDate == null) {
-          return parcels;
+          filtered = parcels;
+        } else {
+          filtered = parcels.where((p) {
+            return p.createdAt.isAfter(
+                  _customStartDate!.subtract(const Duration(days: 1)),
+                ) &&
+                p.createdAt.isBefore(
+                  _customEndDate!.add(const Duration(days: 1)),
+                );
+          }).toList();
         }
-        return parcels.where((p) {
-          return p.createdAt.isAfter(
-                _customStartDate!.subtract(const Duration(days: 1)),
-              ) &&
-              p.createdAt.isBefore(
-                _customEndDate!.add(const Duration(days: 1)),
-              );
-        }).toList();
+        break;
 
       default:
-        return parcels;
+        filtered = parcels;
     }
+
+    // Mettre à jour le cache
+    _lastFilteredParcels = filtered;
+    _lastPeriod = _selectedPeriod;
+    _lastCustomStart = _customStartDate;
+    _lastCustomEnd = _customEndDate;
+    _lastParcelsLength = widget.parcels.length;
+
+    return filtered;
   }
 
   @override

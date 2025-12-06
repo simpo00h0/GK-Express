@@ -36,6 +36,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   String _filterStatus = 'all';
+  
+  // Cache simple pour éviter les recalculs
+  List<Parcel>? _lastFilteredParcels;
+  String? _lastSearchQuery;
+  String? _lastFilterStatus;
+  int? _lastParcelsLength;
 
   String get _filterLabel {
     switch (_filterStatus) {
@@ -142,7 +148,13 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       onTap: () {
-        setState(() => _filterStatus = value);
+        setState(() {
+          _filterStatus = value;
+          // Invalider le cache quand le filtre change
+          if (_lastFilterStatus != value) {
+            _lastFilteredParcels = null;
+          }
+        });
         Navigator.of(context).pop();
       },
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -151,6 +163,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<Parcel> get _filteredParcels {
+    // Utiliser le cache si rien n'a changé
+    if (_lastFilteredParcels != null &&
+        _lastSearchQuery == _searchQuery &&
+        _lastFilterStatus == _filterStatus &&
+        _lastParcelsLength == widget.parcels.length) {
+      return _lastFilteredParcels!;
+    }
+
     var filtered = widget.parcels;
 
     // Filter by status
@@ -168,6 +188,12 @@ class _HomeScreenState extends State<HomeScreen> {
             parcel.destination.toLowerCase().contains(query);
       }).toList();
     }
+
+    // Mettre à jour le cache
+    _lastFilteredParcels = filtered;
+    _lastSearchQuery = _searchQuery;
+    _lastFilterStatus = _filterStatus;
+    _lastParcelsLength = widget.parcels.length;
 
     return filtered;
   }
@@ -205,7 +231,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           )
                         : null,
                   ),
-                  onChanged: (value) => setState(() => _searchQuery = value),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                      // Invalider le cache quand la recherche change
+                      if (_lastSearchQuery != value) {
+                        _lastFilteredParcels = null;
+                      }
+                    });
+                  },
                 ),
                 const SizedBox(height: 12),
                 // Status Filter Button
